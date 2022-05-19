@@ -5,7 +5,6 @@
 static unsigned long total_read_audio_ms = 0;
 static unsigned long total_decode_audio_ms = 0;
 static unsigned long total_play_audio_ms = 0;
-static unsigned long total_datacb_audio_ms = 0;
 
 static i2s_port_t _i2s_num;
 static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
@@ -49,7 +48,6 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
 }
 
 static int _samprate = 0;
-static TickType_t _xLastDataCallbackWakeTime = 0;
 static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len)
 {
     unsigned long s = millis();
@@ -59,16 +57,11 @@ static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t le
               info.bitrate, info.nChans, info.samprate, info.bitsPerSample, info.outputSamps, info.layer, info.version);
         i2s_set_clk(I2S_NUM_0, info.samprate /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
         _samprate = info.samprate;
-        _xLastDataCallbackWakeTime = xTaskGetTickCount();
     }
     size_t i2s_bytes_written = 0;
     i2s_write(I2S_NUM_0, pwm_buffer, len * 2, &i2s_bytes_written, portMAX_DELAY);
     // log_d("len: %d, i2s_bytes_written: %d", len, i2s_bytes_written);
     total_play_audio_ms += millis() - s;
-
-    // Wait for the next cycle.
-    xTaskDelayUntil(&_xLastDataCallbackWakeTime, pdMS_TO_TICKS(1000 * len / info.samprate / info.nChans));
-    total_datacb_audio_ms += millis() - s;
 }
 
 static libhelix::MP3DecoderHelix _mp3(audioDataCallback);
@@ -81,7 +74,6 @@ static void mp3_player_task(void *pvParam)
 
     size_t r, w;
     unsigned long ms = millis();
-    TickType_t xLastReadAduioWakeTime = xTaskGetTickCount();
     while (r = input->readBytes(_frame, MP3_MAX_FRAME_SIZE))
     {
         total_read_audio_ms += millis() - ms;
@@ -94,9 +86,6 @@ static void mp3_player_task(void *pvParam)
             r -= w;
         }
         total_decode_audio_ms += millis() - ms;
-
-        // Wait for the next cycle.
-        xTaskDelayUntil(&xLastReadAduioWakeTime, pdMS_TO_TICKS(1000 * MP3_MAX_FRAME_SIZE * 8 / MP3BITRATE));
         ms = millis();
     }
     log_d("MP3 stop.");

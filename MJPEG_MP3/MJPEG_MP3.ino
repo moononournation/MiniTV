@@ -5,7 +5,6 @@
    https://github.com/bitbank2/JPEGDEC.git
 */
 #define AUDIO_FILENAME "/22050.mp3"
-#define MP3BITRATE 32000
 #define MJPEG_FILENAME "/272_15fps.mjpeg"
 #define FPS 15
 #define MJPEG_BUFFER_SIZE (272 * 240 * 2 / 7)
@@ -59,7 +58,8 @@ void setup()
     ;
 
   // Init Display
-  gfx->begin();
+  // gfx->begin();
+  gfx->begin(80000000);
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -70,18 +70,21 @@ void setup()
   gfx->println("Init I2S");
 #if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S3)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, 42 /* MCLK */, 46 /* SCLK */, 45 /* LRCK */, 43 /* DOUT */, 44 /* DIN */);
+#elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32C3)
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 10 /* SCLK */, 19 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
 #else
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
 #endif
-  if (ret_val != ESP_OK) {
+  if (ret_val != ESP_OK)
+  {
     Serial.printf("i2s_init failed: %d", ret_val);
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
 
   gfx->println("Init FS");
-  if (!LittleFS.begin(false, "/root"))
+  // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
-  // if (!FFat.begin(false, "/root"))
+  if (!FFat.begin(false, "/root"))
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
   // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
   {
@@ -91,9 +94,9 @@ void setup()
   else
   {
     gfx->println("Open audio file: " AUDIO_FILENAME);
-    File aFile = LittleFS.open(AUDIO_FILENAME);
+    // File aFile = LittleFS.open(AUDIO_FILENAME);
     // File aFile = SPIFFS.open(AUDIO_FILENAME);
-    // File aFile = FFat.open(AUDIO_FILENAME);
+    File aFile = FFat.open(AUDIO_FILENAME);
     // File aFile = SD_MMC.open(AUDIO_FILENAME);
     if (!aFile || aFile.isDirectory())
     {
@@ -103,9 +106,9 @@ void setup()
     else
     {
       gfx->println("Open video file: " MJPEG_FILENAME);
-      File vFile = LittleFS.open(MJPEG_FILENAME);
+      // File vFile = LittleFS.open(MJPEG_FILENAME);
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
-      // File vFile = FFat.open(MJPEG_FILENAME);
+      File vFile = FFat.open(MJPEG_FILENAME);
       // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
@@ -123,13 +126,13 @@ void setup()
         {
           Serial.println(F("MP3 audio MJPEG video start"));
 
+          gfx->println("Start play audio task");
+          mp3_player_task_start(&aFile);
+
           gfx->println("Init video");
           mjpeg.setup(
               &vFile, mjpeg_buf, drawMCU, true /* useBigEndian */,
               0 /* x */, 0 /* y */, gfx->width() /* widthLimit */, gfx->height() /* heightLimit */);
-
-          gfx->println("Start play audio task");
-          mp3_player_task_start(&aFile);
 
           gfx->println("Start play video");
           start_ms = millis();
@@ -173,7 +176,7 @@ void setup()
           aFile.close();
           int played_frames = total_frames - skipped_frames;
           float fps = 1000.0 * played_frames / time_used;
-          total_decode_audio_ms -= total_datacb_audio_ms;
+          total_decode_audio_ms -= total_play_audio_ms;
           total_decode_video_ms -= total_show_video_ms;
           Serial.printf("Played frames: %d\n", played_frames);
           Serial.printf("Skipped frames: %d (%0.1f %%)\n", skipped_frames, 100.0 * skipped_frames / total_frames);
@@ -267,14 +270,14 @@ void setup()
           gfx->printf("Show video: %lu ms (%0.1f %%)\n", total_show_video_ms, 100.0 * total_show_video_ms / time_used);
         }
       }
+      delay(60000);
+#ifdef GFX_BL
+      digitalWrite(GFX_BL, LOW);
+#endif
+      gfx->displayOff();
+      esp_deep_sleep_start();
     }
   }
-#ifdef GFX_BL
-  delay(60000);
-  digitalWrite(GFX_BL, LOW);
-#endif
-  //  gfx->displayOff();
-  esp_deep_sleep_start();
 }
 
 void loop()
