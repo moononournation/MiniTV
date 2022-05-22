@@ -72,7 +72,7 @@ static void mp3_player_task(void *pvParam)
 
     _mp3.begin();
 
-    size_t r, w;
+    int r, w;
     unsigned long ms = millis();
     while (r = input->readBytes(_frame, MP3_MAX_FRAME_SIZE))
     {
@@ -95,6 +95,8 @@ static void mp3_player_task(void *pvParam)
 
 static void mp3_player_task_start(Stream *input)
 {
+    _mp3.end();
+
     if (xTaskCreatePinnedToCore(
             (TaskFunction_t)mp3_player_task,
             (const char *const)"MP3 Player Task",

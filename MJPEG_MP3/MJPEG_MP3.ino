@@ -5,9 +5,11 @@
    https://github.com/bitbank2/JPEGDEC.git
 */
 #define AUDIO_FILENAME "/22050.mp3"
-#define MJPEG_FILENAME "/272_15fps.mjpeg"
+// #define MJPEG_FILENAME "/288_15fps.mjpeg"
+#define MJPEG_FILENAME "/320_15fps.mjpeg"
 #define FPS 15
-#define MJPEG_BUFFER_SIZE (272 * 240 * 2 / 7)
+// #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 7)
+#define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 7)
 
 #include <WiFi.h>
 #include <FS.h>
@@ -68,7 +70,9 @@ void setup()
 #endif
 
   gfx->println("Init I2S");
-#if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S3)
+#if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S2)
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 4 /* SCLK */, 5 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
+#elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S3)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, 42 /* MCLK */, 46 /* SCLK */, 45 /* LRCK */, 43 /* DOUT */, 44 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32C3)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 10 /* SCLK */, 19 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
@@ -77,7 +81,7 @@ void setup()
 #endif
   if (ret_val != ESP_OK)
   {
-    Serial.printf("i2s_init failed: %d", ret_val);
+    Serial.printf("i2s_init failed: %d\n", ret_val);
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
 
@@ -85,8 +89,11 @@ void setup()
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
   if (!FFat.begin(false, "/root"))
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
-  // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
+  // SPIClass spi = SPIClass(HSPI);
+  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
+  // if (!SD.begin(13, spi, 80000000))
+  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
+  // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
   {
     Serial.println(F("ERROR: File system mount failed!"));
     gfx->println(F("ERROR: File system mount failed!"));
@@ -97,6 +104,7 @@ void setup()
     // File aFile = LittleFS.open(AUDIO_FILENAME);
     // File aFile = SPIFFS.open(AUDIO_FILENAME);
     File aFile = FFat.open(AUDIO_FILENAME);
+    // File aFile = SD.open(AUDIO_FILENAME);
     // File aFile = SD_MMC.open(AUDIO_FILENAME);
     if (!aFile || aFile.isDirectory())
     {
@@ -109,6 +117,7 @@ void setup()
       // File vFile = LittleFS.open(MJPEG_FILENAME);
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
       File vFile = FFat.open(MJPEG_FILENAME);
+      // File vFile = SD.open(MJPEG_FILENAME);
       // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
@@ -204,7 +213,7 @@ void setup()
 #define LEGEND_H_COLOR 0x7BEF
 #define LEGEND_I_COLOR 0xBDE4
 #define LEGEND_J_COLOR 0x15F9
-          //        gfx->setCursor(0, 0);
+          // gfx->setCursor(0, 0);
           gfx->setTextColor(WHITE);
           gfx->printf("Played frames: %d\n", played_frames);
           gfx->printf("Skipped frames: %d (%0.1f %%)\n", skipped_frames, 100.0 * skipped_frames / total_frames);
@@ -214,7 +223,7 @@ void setup()
 
           int16_t r1 = ((gfx->height() - CHART_MARGIN - CHART_MARGIN) / 2);
           int16_t r2 = r1 / 2;
-          int16_t cx = gfx->width() - gfx->height() + CHART_MARGIN + CHART_MARGIN - 1 + r1;
+          int16_t cx = gfx->width() - r1 - 2;
           int16_t cy = r1 + CHART_MARGIN;
 
           float arc_start1 = 0;
@@ -236,37 +245,37 @@ void setup()
           gfx->fillArc(cx, cy, r1, r2, arc_start2 - 90.0, arc_end2 - 90.0, LEGEND_B_COLOR);
           gfx->setTextColor(LEGEND_B_COLOR);
           gfx->printf("Decode audio: %lu ms (%0.1f %%)\n", total_decode_audio_ms, 100.0 * total_decode_audio_ms / time_used);
-          gfx->setTextColor(LEGEND_C_COLOR);
+          gfx->setTextColor(LEGEND_J_COLOR);
           gfx->printf("Play audio: %lu ms (%0.1f %%)\n", total_play_audio_ms, 100.0 * total_play_audio_ms / time_used);
 
           float arc_start3 = arc_end2;
           float arc_end3 = arc_start3 + max(2.0, 360.0 * total_read_video_ms / time_used);
           for (int i = arc_start3 + 1; i < arc_end3; i += 2)
           {
-            gfx->fillArc(cx, cy, r1, r2, arc_start3 - 90.0, i - 90.0, LEGEND_D_COLOR);
+            gfx->fillArc(cx, cy, r1, r2, arc_start3 - 90.0, i - 90.0, LEGEND_C_COLOR);
           }
-          gfx->fillArc(cx, cy, r1, r2, arc_start3 - 90.0, arc_end3 - 90.0, LEGEND_D_COLOR);
-          gfx->setTextColor(LEGEND_D_COLOR);
+          gfx->fillArc(cx, cy, r1, r2, arc_start3 - 90.0, arc_end3 - 90.0, LEGEND_C_COLOR);
+          gfx->setTextColor(LEGEND_C_COLOR);
           gfx->printf("Read video: %lu ms (%0.1f %%)\n", total_read_video_ms, 100.0 * total_read_video_ms / time_used);
 
           float arc_start4 = arc_end3;
           float arc_end4 = arc_start4 + max(2.0, 360.0 * total_decode_video_ms / time_used);
           for (int i = arc_start4 + 1; i < arc_end4; i += 2)
           {
-            gfx->fillArc(cx, cy, r1, r2, arc_start4 - 90.0, i - 90.0, LEGEND_E_COLOR);
+            gfx->fillArc(cx, cy, r1, r2, arc_start4 - 90.0, i - 90.0, LEGEND_D_COLOR);
           }
-          gfx->fillArc(cx, cy, r1, r2, arc_start4 - 90.0, arc_end4 - 90.0, LEGEND_E_COLOR);
-          gfx->setTextColor(LEGEND_E_COLOR);
+          gfx->fillArc(cx, cy, r1, r2, arc_start4 - 90.0, arc_end4 - 90.0, LEGEND_D_COLOR);
+          gfx->setTextColor(LEGEND_D_COLOR);
           gfx->printf("Decode video: %lu ms (%0.1f %%)\n", total_decode_video_ms, 100.0 * total_decode_video_ms / time_used);
 
           float arc_start5 = arc_end4;
           float arc_end5 = arc_start5 + max(2.0, 360.0 * total_show_video_ms / time_used);
           for (int i = arc_start5 + 1; i < arc_end5; i += 2)
           {
-            gfx->fillArc(cx, cy, r1, r2, arc_start5 - 90.0, i - 90.0, LEGEND_F_COLOR);
+            gfx->fillArc(cx, cy, r2, 0, arc_start5 - 90.0, i - 90.0, LEGEND_E_COLOR);
           }
-          gfx->fillArc(cx, cy, r1, r2, arc_start5 - 90.0, arc_end5 - 90.0, LEGEND_F_COLOR);
-          gfx->setTextColor(LEGEND_F_COLOR);
+          gfx->fillArc(cx, cy, r2, 0, arc_start5 - 90.0, arc_end5 - 90.0, LEGEND_E_COLOR);
+          gfx->setTextColor(LEGEND_E_COLOR);
           gfx->printf("Show video: %lu ms (%0.1f %%)\n", total_show_video_ms, 100.0 * total_show_video_ms / time_used);
         }
       }
