@@ -60,8 +60,8 @@ void setup()
   // while (!Serial);
 
   // Init Display
-  gfx->begin();
-  // gfx->begin(80000000);
+  // gfx->begin();
+  gfx->begin(80000000);
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
