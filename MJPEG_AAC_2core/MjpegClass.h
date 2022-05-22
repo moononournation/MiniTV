@@ -55,20 +55,20 @@ static int queueDrawMCU(JPEGDRAW *pDraw)
   return 1;
 }
 
-static void drawTask(void *arg)
+static void draw_task(void *arg)
 {
   paramDrawTask *p = (paramDrawTask *)arg;
   JPEGDRAW *pDraw;
-  printf("drawTask start.\n");
+  printf("draw_task start.\n");
   while (xQueueReceive(p->xqh, &pDraw, portMAX_DELAY))
   {
-    // printf("drawTask work start: x: %d, y: %d, iWidth: %d, iHeight: %d.\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
+    // printf("draw_task work start: x: %d, y: %d, iWidth: %d, iHeight: %d.\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
     p->drawFunc(pDraw);
-    // printf("drawTask work end.\n");
+    // printf("draw_task work end.\n");
     ++_draw_cnt;
   }
   vQueueDelete(p->xqh);
-  printf("drawTask end.\n");
+  printf("draw_task end.\n");
   vTaskDelete(NULL);
 }
 
@@ -93,7 +93,14 @@ public:
     _xqh = xQueueCreate(NUMBER_OF_DRAW_BUFFER, sizeof(JPEGDRAW));
     _pDrawTask.xqh = _xqh;
     _pDrawTask.drawFunc = pfnDraw;
-    xTaskCreatePinnedToCore(drawTask, "drawTask", 1600, &_pDrawTask, 2, &_drawTask, 0);
+    xTaskCreatePinnedToCore(
+        (TaskFunction_t)draw_task,
+        (const char *const)"Draw Task",
+        (const uint32_t)1600,
+        (void *const)&_pDrawTask,
+        (UBaseType_t)configMAX_PRIORITIES - 1,
+        (TaskHandle_t *const)&_drawTask,
+        (const BaseType_t)0);
 
     for (int i = 0; i < NUMBER_OF_DRAW_BUFFER; i++)
     {
