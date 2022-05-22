@@ -4,7 +4,7 @@
    https://github.com/pschatzmann/arduino-libhelix.git
    https://github.com/bitbank2/JPEGDEC.git
 */
-#define AUDIO_FILENAME "/22050.mp3"
+#define AUDIO_FILENAME "/22050.aac"
 // #define MJPEG_FILENAME "/288_15fps.mjpeg"
 #define MJPEG_FILENAME "/320_15fps.mjpeg"
 #define FPS 15
@@ -35,7 +35,7 @@ static unsigned long total_decode_video_ms = 0;
 static unsigned long total_show_video_ms = 0;
 static unsigned long start_ms, curr_ms, next_frame_ms;
 
-/* MP3 audio */
+/* AAC audio */
 #include "esp32_audio.h"
 
 /* MJPEG Video */
@@ -132,10 +132,10 @@ void setup()
         }
         else
         {
-          Serial.println(F("MP3 audio MJPEG video start"));
+          Serial.println(F("AAC audio MJPEG video start"));
 
           gfx->println("Start play audio task");
-          mp3_player_task_start(&aFile);
+          aac_player_task_start(&aFile);
 
           gfx->println("Init video");
           mjpeg.setup(
@@ -179,7 +179,7 @@ void setup()
           }
           int time_used = millis() - start_ms;
           int total_frames = next_frame - 1;
-          Serial.println(F("MP3 audio MJPEG video end"));
+          Serial.println(F("AAC audio MJPEG video end"));
           vFile.close();
           aFile.close();
           int played_frames = total_frames - skipped_frames;

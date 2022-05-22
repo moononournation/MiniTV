@@ -8,14 +8,69 @@
 #define _MJPEGCLASS_H_
 
 #define READ_BUFFER_SIZE 1024
-#define MAXOUTPUTSIZE (MAX_BUFFERED_PIXELS / 16 / 16)
-// #define MAXOUTPUTSIZE (288 / 3 / 16)
-#define NUMBER_OF_DRAW_BUFFER 4
-// #define NUMBER_OF_DRAW_BUFFER 6
+// #define MAXOUTPUTSIZE (MAX_BUFFERED_PIXELS / 16 / 16)
+#define MAXOUTPUTSIZE (288 / 3 / 16)
+// #define NUMBER_OF_DRAW_BUFFER 4
+#define NUMBER_OF_DRAW_BUFFER 6
 
 #include <FS.h>
 
 #include <JPEGDEC.h>
+
+typedef struct
+{
+  xQueueHandle xqh;
+  JPEG_DRAW_CALLBACK *drawFunc;
+} paramDrawTask;
+
+static JPEGDRAW jpegdraws[NUMBER_OF_DRAW_BUFFER];
+static int _draw_queue_cnt = 0;
+static int _draw_cnt = 0;
+static xQueueHandle _xqh;
+
+static int queueDrawMCU(JPEGDRAW *pDraw)
+{
+  int len = pDraw->iWidth * pDraw->iHeight * 2;
+  JPEGDRAW *j = &jpegdraws[_draw_queue_cnt % NUMBER_OF_DRAW_BUFFER];
+  j->x = pDraw->x;
+  j->y = pDraw->y;
+  j->iWidth = pDraw->iWidth;
+  j->iHeight = pDraw->iHeight;
+  memcpy(j->pPixels, pDraw->pPixels, len);
+
+  // log_i("queueDrawMCU start.");
+  ++_draw_queue_cnt;
+  if ((_draw_queue_cnt - _draw_cnt) > NUMBER_OF_DRAW_BUFFER)
+  {
+    log_i("draw queue overflow!");
+    while ((_draw_queue_cnt - _draw_cnt) > NUMBER_OF_DRAW_BUFFER)
+    {
+      vTaskDelay(1);
+    }
+  }
+
+  xQueueSend(_xqh, &j, portMAX_DELAY);
+  // log_i("queueDrawMCU end.\n");
+
+  return 1;
+}
+
+static void drawTask(void *arg)
+{
+  paramDrawTask *p = (paramDrawTask *)arg;
+  JPEGDRAW *pDraw;
+  printf("drawTask start.\n");
+  while (xQueueReceive(p->xqh, &pDraw, portMAX_DELAY))
+  {
+    // printf("drawTask work start: x: %d, y: %d, iWidth: %d, iHeight: %d.\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
+    p->drawFunc(pDraw);
+    // printf("drawTask work end.\n");
+    ++_draw_cnt;
+  }
+  vQueueDelete(p->xqh);
+  printf("drawTask end.\n");
+  vTaskDelete(NULL);
+}
 
 class MjpegClass
 {
@@ -26,7 +81,6 @@ public:
   {
     _input = input;
     _mjpeg_buf = mjpeg_buf;
-    _pfnDraw = pfnDraw;
     _useBigEndian = useBigEndian;
     _x = x;
     _y = y;
@@ -35,6 +89,23 @@ public:
     _inputindex = 0;
 
     _read_buf = (uint8_t *)malloc(READ_BUFFER_SIZE);
+
+    _xqh = xQueueCreate(NUMBER_OF_DRAW_BUFFER, sizeof(JPEGDRAW));
+    _pDrawTask.xqh = _xqh;
+    _pDrawTask.drawFunc = pfnDraw;
+    xTaskCreatePinnedToCore(drawTask, "drawTask", 1600, &_pDrawTask, 2, &_drawTask, 0);
+
+    for (int i = 0; i < NUMBER_OF_DRAW_BUFFER; i++)
+    {
+      if (!jpegdraws[i].pPixels)
+      {
+        jpegdraws[i].pPixels = (uint16_t *)heap_caps_malloc(MAXOUTPUTSIZE * 16 * 16 * 2, MALLOC_CAP_DMA);
+      }
+      if (jpegdraws[i].pPixels)
+      {
+        printf("#%d draw buffer allocated.\n", i);
+      }
+    }
 
     return true;
   }
@@ -130,7 +201,7 @@ public:
   bool drawJpg()
   {
     _remain = _mjpeg_buf_offset;
-    _jpeg.openRAM(_mjpeg_buf, _remain, _pfnDraw);
+    _jpeg.openRAM(_mjpeg_buf, _remain, queueDrawMCU);
     if (_scale == -1)
     {
       // scale to fit height
@@ -177,7 +248,6 @@ public:
 private:
   Stream *_input;
   uint8_t *_mjpeg_buf;
-  JPEG_DRAW_CALLBACK *_pfnDraw;
   bool _useBigEndian;
   int _x;
   int _y;
@@ -186,6 +256,9 @@ private:
 
   uint8_t *_read_buf;
   int32_t _mjpeg_buf_offset = 0;
+
+  TaskHandle_t _drawTask;
+  paramDrawTask _pDrawTask;
 
   JPEGDEC _jpeg;
   int _scale = -1;
