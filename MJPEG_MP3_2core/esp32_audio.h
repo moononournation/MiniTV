@@ -55,11 +55,11 @@ static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t le
     {
         log_d("bitrate: %d, nChans: %d, samprate: %d, bitsPerSample: %d, outputSamps: %d, layer: %d, version: %d",
               info.bitrate, info.nChans, info.samprate, info.bitsPerSample, info.outputSamps, info.layer, info.version);
-        i2s_set_clk(I2S_NUM_0, info.samprate /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
+        i2s_set_clk(_i2s_num, info.samprate /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
         _samprate = info.samprate;
     }
     size_t i2s_bytes_written = 0;
-    i2s_write(I2S_NUM_0, pwm_buffer, len * 2, &i2s_bytes_written, portMAX_DELAY);
+    i2s_write(_i2s_num, pwm_buffer, len * 2, &i2s_bytes_written, portMAX_DELAY);
     // log_d("len: %d, i2s_bytes_written: %d", len, i2s_bytes_written);
     total_play_audio_ms += millis() - s;
 }
