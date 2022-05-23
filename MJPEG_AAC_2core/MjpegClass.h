@@ -59,16 +59,16 @@ static void draw_task(void *arg)
 {
   paramDrawTask *p = (paramDrawTask *)arg;
   JPEGDRAW *pDraw;
-  printf("draw_task start.\n");
+  log_i("draw_task start.\n");
   while (xQueueReceive(p->xqh, &pDraw, portMAX_DELAY))
   {
-    // printf("draw_task work start: x: %d, y: %d, iWidth: %d, iHeight: %d.\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
+    // log_i("draw_task work start: x: %d, y: %d, iWidth: %d, iHeight: %d.\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
     p->drawFunc(pDraw);
-    // printf("draw_task work end.\n");
+    // log_i("draw_task work end.\n");
     ++_draw_cnt;
   }
   vQueueDelete(p->xqh);
-  printf("draw_task end.\n");
+  log_i("draw_task end.\n");
   vTaskDelete(NULL);
 }
 
@@ -110,7 +110,7 @@ public:
       }
       if (jpegdraws[i].pPixels)
       {
-        printf("#%d draw buffer allocated.\n", i);
+        log_i("#%d draw buffer allocated.\n", i);
       }
     }
 
@@ -134,7 +134,7 @@ public:
       {
         if ((_read_buf[i] == 0xFF) && (_read_buf[i + 1] == 0xD8)) // JPEG header
         {
-          // Serial.printf("Found FFD8 at: %d.\n", i);
+          // log_i("Found FFD8 at: %d.\n", i);
           found_FFD8 = true;
         }
         ++i;
@@ -158,7 +158,7 @@ public:
       {
         if ((_mjpeg_buf_offset > 0) && (_mjpeg_buf[_mjpeg_buf_offset - 1] == 0xFF) && (_p[0] == 0xD9)) // JPEG trailer
         {
-          // Serial.printf("Found FFD9 at: %d.\n", i);
+          // log_i("Found FFD9 at: %d.\n", i);
           found_FFD9 = true;
         }
         else
@@ -174,19 +174,19 @@ public:
           }
         }
 
-        // Serial.printf("i: %d\n", i);
+        // log_i("i: %d\n", i);
         memcpy(_mjpeg_buf + _mjpeg_buf_offset, _p, i);
         _mjpeg_buf_offset += i;
         size_t o = _buf_read - i;
         if (o > 0)
         {
-          // Serial.printf("o: %d\n", o);
+          // log_i("o: %d\n", o);
           memcpy(_read_buf, _p + i, o);
           _buf_read = _input->readBytes(_read_buf + o, READ_BUFFER_SIZE - o);
           _p = _read_buf;
           _inputindex += _buf_read;
           _buf_read += o;
-          // Serial.printf("_buf_read: %d\n", _buf_read);
+          // log_i("_buf_read: %d\n", _buf_read);
         }
         else
         {

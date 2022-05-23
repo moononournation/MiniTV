@@ -53,14 +53,14 @@ static void audioDataCallback(AACFrameInfo &info, int16_t *pwm_buffer, size_t le
     unsigned long s = millis();
     if (_samprate != info.sampRateOut)
     {
-        log_d("bitRate: %d, nChans: %d, sampRateCore: %d, sampRateOut: %d, bitsPerSample: %d, outputSamps: %d, profile: %d, tnsUsed: %d, pnsUsed: %d",
+        log_i("bitRate: %d, nChans: %d, sampRateCore: %d, sampRateOut: %d, bitsPerSample: %d, outputSamps: %d, profile: %d, tnsUsed: %d, pnsUsed: %d",
               info.bitRate, info.nChans, info.sampRateCore, info.sampRateOut, info.bitsPerSample, info.outputSamps, info.profile, info.tnsUsed, info.pnsUsed);
         i2s_set_clk(_i2s_num, info.sampRateOut /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
         _samprate = info.sampRateOut;
     }
     size_t i2s_bytes_written = 0;
     i2s_write(_i2s_num, pwm_buffer, len * 2, &i2s_bytes_written, portMAX_DELAY);
-    // log_d("len: %d, i2s_bytes_written: %d", len, i2s_bytes_written);
+    // log_i("len: %d, i2s_bytes_written: %d", len, i2s_bytes_written);
     total_play_audio_ms += millis() - s;
 }
 
@@ -80,13 +80,13 @@ static void aac_player_task(void *pvParam)
         while (r > 0)
         {
             w = _aac.write(_frame, r);
-            // log_d("r: %d, w: %d\n", r, w);
+            // log_i("r: %d, w: %d\n", r, w);
             r -= w;
         }
         total_decode_audio_ms += millis() - ms;
         ms = millis();
     }
-    log_d("AAC stop.");
+    log_i("AAC stop.");
 
     vTaskDelete(NULL);
 }
