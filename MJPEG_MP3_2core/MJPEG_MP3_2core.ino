@@ -24,8 +24,6 @@
 #define GFX_BL DF_GFX_BL // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
 Arduino_DataBus *bus = create_default_Arduino_DataBus();
 Arduino_GFX *gfx = new Arduino_ILI9341(bus, DF_GFX_RST, 3 /* rotation */, false /* IPS */);
-
-// Arduino_DataBus *bus = new Arduino_ESP32I2S8(DF_GFX_DC, GFX_NOT_DEFINED, 5 /* WR */, GFX_NOT_DEFINED /* RD */, 23 /* D0 */, 19 /* D1 */, 18 /* D2 */, 22 /* D3 */, 21 /* D4 */, 4 /* D5 */, 0 /* D6 */, 2 /* D7 */);
 // Arduino_GFX *gfx = new Arduino_ST7789(bus, DF_GFX_RST, 1 /* rotation */, true /* IPS */, 240 /* width */, 288 /* height */, 0 /* col offset 1 */, 20 /* row offset 1 */, 0 /* col offset 2 */, 12 /* row offset 2 */);
 
 /* variables */
@@ -60,7 +58,6 @@ void setup()
   // while (!Serial);
 
   // Init Display
-  // gfx->begin();
   gfx->begin(80000000);
   gfx->fillScreen(BLACK);
 

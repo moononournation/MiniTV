@@ -26,6 +26,7 @@
 Arduino_DataBus *bus = create_default_Arduino_DataBus();
 /* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
 Arduino_GFX *gfx = new Arduino_ILI9341(bus, DF_GFX_RST, 3 /* rotation */, false /* IPS */);
+// Arduino_GFX *gfx = new Arduino_ST7789(bus, DF_GFX_RST, 1 /* rotation */, true /* IPS */, 240 /* width */, 288 /* height */, 0 /* col offset 1 */, 20 /* row offset 1 */, 0 /* col offset 2 */, 12 /* row offset 2 */);
 
 /* variables */
 static int next_frame = 0;
@@ -59,7 +60,6 @@ void setup()
   // while (!Serial);
 
   // Init Display
-  // gfx->begin();
   gfx->begin(80000000);
   gfx->fillScreen(BLACK);
 
