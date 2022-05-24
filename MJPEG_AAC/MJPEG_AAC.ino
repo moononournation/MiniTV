@@ -135,7 +135,11 @@ void setup()
           Serial.println(F("AAC audio MJPEG video start"));
 
           gfx->println("Start play audio task");
-          aac_player_task_start(&aFile);
+          BaseType_t ret_val = aac_player_task_start(&aFile);
+          if (ret_val != pdPASS)
+          {
+            Serial.printf("aac_player_task_start failed: %d\n", ret_val);
+          }
 
           gfx->println("Init video");
           mjpeg.setup(

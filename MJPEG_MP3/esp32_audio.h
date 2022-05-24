@@ -91,7 +91,7 @@ static void mp3_player_task(void *pvParam)
     vTaskDelete(NULL);
 }
 
-static esp_err_t mp3_player_task_start(Stream *input)
+static BaseType_t mp3_player_task_start(Stream *input)
 {
     _mp3.begin();
 

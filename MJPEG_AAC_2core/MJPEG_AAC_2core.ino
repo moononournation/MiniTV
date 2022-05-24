@@ -133,8 +133,8 @@ void setup()
           Serial.println(F("AAC audio MJPEG video start"));
 
           gfx->println("Start play audio task");
-          esp_err_t ret_val = aac_player_task_start(&aFile);
-          if (ret_val != ESP_OK)
+          BaseType_t ret_val = aac_player_task_start(&aFile);
+          if (ret_val != pdPASS)
           {
             Serial.printf("aac_player_task_start failed: %d\n", ret_val);
           }

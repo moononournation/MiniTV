@@ -133,8 +133,8 @@ void setup()
           Serial.println(F("MP3 audio MJPEG video start"));
 
           gfx->println("Start play audio task");
-          esp_err_t ret_val = mp3_player_task_start(&aFile);
-          if (ret_val != ESP_OK)
+          BaseType_t ret_val = mp3_player_task_start(&aFile);
+          if (ret_val != pdPASS)
           {
             Serial.printf("mp3_player_task_start failed: %d\n", ret_val);
           }
