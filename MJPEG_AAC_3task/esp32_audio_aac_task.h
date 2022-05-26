@@ -1,6 +1,6 @@
 #include "driver/i2s.h"
 
-#include "MP3DecoderHelix.h"
+#include "AACDecoderHelix.h"
 
 static unsigned long total_read_audio_ms = 0;
 static unsigned long total_decode_audio_ms = 0;
@@ -26,7 +26,7 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
     i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;
     i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S;
     i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;
-    i2s_config.dma_buf_count = 6;
+    i2s_config.dma_buf_count = 8;
     i2s_config.dma_buf_len = 160;
     i2s_config.use_apll = false;
     i2s_config.tx_desc_auto_clear = true;
@@ -48,15 +48,15 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
 }
 
 static int _samprate = 0;
-static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len)
+static void audioDataCallback(AACFrameInfo &info, int16_t *pwm_buffer, size_t len)
 {
     unsigned long s = millis();
-    if (_samprate != info.samprate)
+    if (_samprate != info.sampRateOut)
     {
-        log_i("bitrate: %d, nChans: %d, samprate: %d, bitsPerSample: %d, outputSamps: %d, layer: %d, version: %d",
-              info.bitrate, info.nChans, info.samprate, info.bitsPerSample, info.outputSamps, info.layer, info.version);
-        i2s_set_clk(_i2s_num, info.samprate /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
-        _samprate = info.samprate;
+        // log_i("bitRate: %d, nChans: %d, sampRateCore: %d, sampRateOut: %d, bitsPerSample: %d, outputSamps: %d, profile: %d, tnsUsed: %d, pnsUsed: %d",
+        //       info.bitRate, info.nChans, info.sampRateCore, info.sampRateOut, info.bitsPerSample, info.outputSamps, info.profile, info.tnsUsed, info.pnsUsed);
+        i2s_set_clk(_i2s_num, info.sampRateOut /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
+        _samprate = info.sampRateOut;
     }
     size_t i2s_bytes_written = 0;
     i2s_write(_i2s_num, pwm_buffer, len * 2, &i2s_bytes_written, portMAX_DELAY);
@@ -64,43 +64,43 @@ static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t le
     total_play_audio_ms += millis() - s;
 }
 
-static libhelix::MP3DecoderHelix _mp3(audioDataCallback);
-static uint8_t _frame[MP3_MAX_FRAME_SIZE];
-static void mp3_player_task(void *pvParam)
+static libhelix::AACDecoderHelix _aac(audioDataCallback);
+static uint8_t _frame[AAC_MAX_FRAME_SIZE];
+static void aac_player_task(void *pvParam)
 {
     Stream *input = (Stream *)pvParam;
 
     int r, w;
     unsigned long ms = millis();
-    while (r = input->readBytes(_frame, MP3_MAX_FRAME_SIZE))
+    while (r = input->readBytes(_frame, AAC_MAX_FRAME_SIZE))
     {
         total_read_audio_ms += millis() - ms;
         ms = millis();
 
         while (r > 0)
         {
-            w = _mp3.write(_frame, r);
+            w = _aac.write(_frame, r);
             // log_i("r: %d, w: %d\n", r, w);
             r -= w;
         }
         total_decode_audio_ms += millis() - ms;
         ms = millis();
     }
-    log_i("MP3 stop.");
+    log_i("AAC stop.");
 
     vTaskDelete(NULL);
 }
 
-static BaseType_t mp3_player_task_start(Stream *input)
+static BaseType_t aac_player_task_start(Stream *input, BaseType_t aacAssignCore)
 {
-    _mp3.begin();
+    _aac.begin();
 
     return xTaskCreatePinnedToCore(
-        (TaskFunction_t)mp3_player_task,
-        (const char *const)"MP3 Player Task",
+        (TaskFunction_t)aac_player_task,
+        (const char *const)"AAC Player Task",
         (const uint32_t)1600,
         (void *const)input,
         (UBaseType_t)configMAX_PRIORITIES - 1,
         (TaskHandle_t *const)NULL,
-        (const BaseType_t)0);
+        (const BaseType_t)aacAssignCore);
 }

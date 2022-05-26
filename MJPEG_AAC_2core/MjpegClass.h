@@ -45,7 +45,7 @@ static int queueDrawMCU(JPEGDRAW *pDraw)
     log_i("draw queue overflow!");
     while ((_draw_queue_cnt - _draw_cnt) > NUMBER_OF_DRAW_BUFFER)
     {
-      vTaskDelay(1);
+      vTaskDelay(pdMS_TO_TICKS(1));
     }
   }
 

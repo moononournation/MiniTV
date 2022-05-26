@@ -8,8 +8,8 @@
 // #define MJPEG_FILENAME "/288_15fps.mjpeg"
 #define MJPEG_FILENAME "/320_15fps.mjpeg"
 #define FPS 15
-// #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 7)
-#define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 7)
+// #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 10)
+#define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 10)
 
 #include <WiFi.h>
 #include <FS.h>
@@ -149,7 +149,6 @@ void setup()
           gfx->println("Start play video");
           start_ms = millis();
           curr_ms = millis();
-          TickType_t xLastFrameWakeTime = xTaskGetTickCount();
           next_frame_ms = start_ms + (++next_frame * 1000 / FPS / 2);
           while (vFile.available() && mjpeg.readMjpegBuf()) // Read video
           {
@@ -160,7 +159,6 @@ void setup()
             {
               // Play video
               mjpeg.drawJpg();
-              gfx->flush();
               total_decode_video_ms += millis() - curr_ms;
               curr_ms = millis();
             }
@@ -170,12 +168,9 @@ void setup()
               Serial.println(F("Skip frame"));
             }
 
-            // Wait for the next cycle.
-            xTaskDelayUntil(&xLastFrameWakeTime, pdMS_TO_TICKS(1000 / FPS));
-
             while (millis() < next_frame_ms)
             {
-              vTaskDelay(1);
+              vTaskDelay(pdMS_TO_TICKS(1));
             }
 
             curr_ms = millis();
