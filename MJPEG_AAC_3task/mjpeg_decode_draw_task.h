@@ -2,7 +2,7 @@
 // #define MAXOUTPUTSIZE (MAX_BUFFERED_PIXELS / 16 / 16)
 #define MAXOUTPUTSIZE (288 / 3 / 16)
 #define NUMBER_OF_DECODE_BUFFER 3
-#define NUMBER_OF_DRAW_BUFFER 6
+#define NUMBER_OF_DRAW_BUFFER 9
 
 #include <FS.h>
 #include <JPEGDEC.h>
