@@ -4,13 +4,19 @@
  * https://github.com/pschatzmann/arduino-libhelix.git
  * https://github.com/bitbank2/JPEGDEC.git
  */
+// #define AAC_AUDIO
+#define MP3_AUDIO
+#ifdef AAC_AUDIO
 #define AUDIO_FILENAME "/22050.aac"
+#else // MP3_AUDIO
+#define AUDIO_FILENAME "/22050.mp3"
+#endif
 #define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
 #define FPS 30
 #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
 // #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 8)
-#define AACASSIGNCORE 1
+#define AUDIOASSIGNCORE 1
 #define DECODEASSIGNCORE 0
 #define DRAWASSIGNCORE 1
 
@@ -34,8 +40,8 @@ static int next_frame = 0;
 static int skipped_frames = 0;
 static unsigned long start_ms, curr_ms, next_frame_ms;
 
-/* AAC audio */
-#include "esp32_audio_aac_task.h"
+/* audio */
+#include "esp32_audio_task.h"
 
 /* MJPEG Video */
 #include "mjpeg_decode_draw_task.h"
@@ -124,13 +130,17 @@ void setup()
       }
       else
       {
-        Serial.println(F("AAC audio MJPEG video start"));
+        Serial.println(F("AV start"));
 
         gfx->println("Start play audio task");
-        BaseType_t ret_val = aac_player_task_start(&aFile, AACASSIGNCORE);
+#ifdef AAC_AUDIO
+        BaseType_t ret_val = aac_player_task_start(&aFile, AUDIOASSIGNCORE);
+#else // MP3_AUDIO
+        BaseType_t ret_val = mp3_player_task_start(&aFile, AUDIOASSIGNCORE);
+#endif
         if (ret_val != pdPASS)
         {
-          Serial.printf("aac_player_task_start failed: %d\n", ret_val);
+          Serial.printf("Audio player task start failed: %d\n", ret_val);
         }
 
         gfx->println("Init video");
@@ -169,7 +179,7 @@ void setup()
         }
         int time_used = millis() - start_ms;
         int total_frames = next_frame - 1;
-        Serial.println(F("AAC audio MJPEG video end"));
+        Serial.println(F("AV end"));
         vFile.close();
         aFile.close();
 
