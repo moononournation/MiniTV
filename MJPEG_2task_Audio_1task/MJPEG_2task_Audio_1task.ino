@@ -5,8 +5,8 @@
  * https://github.com/bitbank2/JPEGDEC.git
  */
 // auto fall back to MP3 if AAC file not available
-#define AAC_FILENAME "/22050.aac"
-#define MP3_FILENAME "/22050.mp3"
+#define AAC_FILENAME "/44100.aac"
+#define MP3_FILENAME "/44100.mp3"
 #define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
 #define FPS 30
@@ -72,13 +72,13 @@ void setup()
   Serial.println("Init I2S");
   gfx->println("Init I2S");
 #if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32)
-  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S2)
-  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 4 /* SCLK */, 5 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 4 /* SCLK */, 5 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S3)
-  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, 42 /* MCLK */, 46 /* SCLK */, 45 /* LRCK */, 43 /* DOUT */, 44 /* DIN */);
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, 42 /* MCLK */, 46 /* SCLK */, 45 /* LRCK */, 43 /* DOUT */, 44 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32C3)
-  esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 10 /* SCLK */, 19 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 10 /* SCLK */, 19 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
 #endif
   if (ret_val != ESP_OK)
   {
