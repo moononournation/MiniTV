@@ -6,13 +6,13 @@ Various example for playing audio and video
 
 ### AAC Audio
 
-##### 22 kHz Mono
-`ffmpeg -i input.mp4 -ar 22050 -ac 1 -ab 24k 22050.aac`
+#### 22 kHz Mono
+`ffmpeg -i input.mp4 -ar 22050 -ac 1 -ab 24k -filter:a loudnorm 22050.aac`
 
 ### MP3 Audio
 
-##### 22 kHz Mono
-`ffmpeg -i input.mp4 -ar 22050 -ac 1 -ab 32k 22050.mp3`
+#### 22 kHz Mono
+`ffmpeg -i input.mp4 -ar 22050 -ac 1 -ab 32k -filter:a loudnorm 22050.mp3`
 
 ### MJPEG Video
 
