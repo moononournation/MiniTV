@@ -80,22 +80,23 @@ static void mp3AudioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t
     total_play_audio_ms += millis() - s;
 }
 
+static uint8_t _frame[MP3_MAX_FRAME_SIZE]; // MP3_MAX_FRAME_SIZE is smaller, so always use MP3_MAX_FRAME_SIZE
+
 static libhelix::AACDecoderHelix _aac(aacAudioDataCallback);
-static uint8_t _aacFrame[AAC_MAX_FRAME_SIZE];
 static void aac_player_task(void *pvParam)
 {
     Stream *input = (Stream *)pvParam;
 
     int r, w;
     unsigned long ms = millis();
-    while (r = input->readBytes(_aacFrame, AAC_MAX_FRAME_SIZE))
+    while (r = input->readBytes(_frame, MP3_MAX_FRAME_SIZE))
     {
         total_read_audio_ms += millis() - ms;
         ms = millis();
 
         while (r > 0)
         {
-            w = _aac.write(_aacFrame, r);
+            w = _aac.write(_frame, r);
             // log_i("r: %d, w: %d\n", r, w);
             r -= w;
         }
@@ -108,21 +109,20 @@ static void aac_player_task(void *pvParam)
 }
 
 static libhelix::MP3DecoderHelix _mp3(mp3AudioDataCallback);
-static uint8_t _mp3Frame[MP3_MAX_FRAME_SIZE];
 static void mp3_player_task(void *pvParam)
 {
     Stream *input = (Stream *)pvParam;
 
     int r, w;
     unsigned long ms = millis();
-    while (r = input->readBytes(_mp3Frame, MP3_MAX_FRAME_SIZE))
+    while (r = input->readBytes(_frame, MP3_MAX_FRAME_SIZE))
     {
         total_read_audio_ms += millis() - ms;
         ms = millis();
 
         while (r > 0)
         {
-            w = _mp3.write(_mp3Frame, r);
+            w = _mp3.write(_frame, r);
             // log_i("r: %d, w: %d\n", r, w);
             r -= w;
         }

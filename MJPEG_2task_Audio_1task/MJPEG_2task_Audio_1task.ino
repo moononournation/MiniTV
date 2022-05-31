@@ -4,13 +4,9 @@
  * https://github.com/pschatzmann/arduino-libhelix.git
  * https://github.com/bitbank2/JPEGDEC.git
  */
-// #define AAC_AUDIO
-#define MP3_AUDIO
-#ifdef AAC_AUDIO
-#define AUDIO_FILENAME "/22050.aac"
-#else // MP3_AUDIO
-#define AUDIO_FILENAME "/22050.mp3"
-#endif
+// auto fall back to MP3 if AAC file not available
+#define AAC_FILENAME "/22050.aac"
+#define MP3_FILENAME "/22050.mp3"
 #define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
 #define FPS 30
@@ -73,6 +69,7 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 #endif
 
+  Serial.println("Init I2S");
   gfx->println("Init I2S");
 #if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 22050, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
@@ -89,6 +86,7 @@ void setup()
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
 
+  Serial.println("Init FS");
   gfx->println("Init FS");
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
@@ -99,25 +97,43 @@ void setup()
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
   // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
   {
-    Serial.println(F("ERROR: File system mount failed!"));
-    gfx->println(F("ERROR: File system mount failed!"));
+    Serial.println("ERROR: File system mount failed!");
+    gfx->println("ERROR: File system mount failed!");
   }
   else
   {
-    gfx->println("Open audio file: " AUDIO_FILENAME);
-    // File aFile = LittleFS.open(AUDIO_FILENAME);
-    // File aFile = SPIFFS.open(AUDIO_FILENAME);
-    // File aFile = FFat.open(AUDIO_FILENAME);
-    File aFile = SD.open(AUDIO_FILENAME);
-    // File aFile = SD_MMC.open(AUDIO_FILENAME);
-    if (!aFile || aFile.isDirectory())
+    bool aac_file_available = false;
+    Serial.println("Open AAC file: " AAC_FILENAME);
+    gfx->println("Open AAC file: " AAC_FILENAME);
+    // File aFile = LittleFS.open(AAC_FILENAME);
+    // File aFile = SPIFFS.open(AAC_FILENAME);
+    // File aFile = FFat.open(AAC_FILENAME);
+    File aFile = SD.open(AAC_FILENAME);
+    // File aFile = SD_MMC.open(AAC_FILENAME);
+    if (aFile)
     {
-      Serial.println(F("ERROR: Failed to open " AUDIO_FILENAME " file for reading"));
-      gfx->println(F("ERROR: Failed to open " AUDIO_FILENAME " file for reading"));
+      aac_file_available = true;
     }
     else
     {
-      gfx->println("Open video file: " MJPEG_FILENAME);
+      Serial.println("Open MP3 file: " MP3_FILENAME);
+      gfx->println("Open MP3 file: " MP3_FILENAME);
+      // aFile = LittleFS.open(MP3_FILENAME);
+      // aFile = SPIFFS.open(MP3_FILENAME);
+      // aFile = FFat.open(MP3_FILENAME);
+      aFile = SD.open(MP3_FILENAME);
+      // aFile = SD_MMC.open(MP3_FILENAME);
+    }
+
+    if (!aFile || aFile.isDirectory())
+    {
+      Serial.println("ERROR: Failed to open " AAC_FILENAME " or " MP3_FILENAME " file for reading");
+      gfx->println("ERROR: Failed to open " AAC_FILENAME " or " MP3_FILENAME " file for reading");
+    }
+    else
+    {
+      Serial.println("Open MJPEG file: " MJPEG_FILENAME);
+      gfx->println("Open MJPEG file: " MJPEG_FILENAME);
       // File vFile = LittleFS.open(MJPEG_FILENAME);
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
       // File vFile = FFat.open(MJPEG_FILENAME);
@@ -125,28 +141,34 @@ void setup()
       // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
-        Serial.println(F("ERROR: Failed to open " MJPEG_FILENAME " file for reading"));
-        gfx->println(F("ERROR: Failed to open " MJPEG_FILENAME " file for reading"));
+        Serial.println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
+        gfx->println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
       }
       else
       {
-        Serial.println(F("AV start"));
-
+        Serial.println("Start play audio task");
         gfx->println("Start play audio task");
-#ifdef AAC_AUDIO
-        BaseType_t ret_val = aac_player_task_start(&aFile, AUDIOASSIGNCORE);
-#else // MP3_AUDIO
-        BaseType_t ret_val = mp3_player_task_start(&aFile, AUDIOASSIGNCORE);
-#endif
+        BaseType_t ret_val;
+        if (aac_file_available)
+        {
+          ret_val = aac_player_task_start(&aFile, AUDIOASSIGNCORE);
+        }
+        else
+        {
+          ret_val = mp3_player_task_start(&aFile, AUDIOASSIGNCORE);
+        }
         if (ret_val != pdPASS)
         {
           Serial.printf("Audio player task start failed: %d\n", ret_val);
+          gfx->printf("Audio player task start failed: %d\n", ret_val);
         }
 
+        Serial.println("Start play audio task");
         gfx->println("Init video");
         mjpeg_setup(&vFile, MJPEG_BUFFER_SIZE, drawMCU,
                     false /* useBigEndian */, DECODEASSIGNCORE, DRAWASSIGNCORE);
 
+        Serial.println("Start play video");
         gfx->println("Start play video");
         start_ms = millis();
         curr_ms = millis();
@@ -166,7 +188,7 @@ void setup()
           else
           {
             ++skipped_frames;
-            Serial.println(F("Skip frame"));
+            Serial.println("Skip frame");
           }
 
           while (millis() < next_frame_ms)
@@ -179,7 +201,7 @@ void setup()
         }
         int time_used = millis() - start_ms;
         int total_frames = next_frame - 1;
-        Serial.println(F("AV end"));
+        Serial.println("AV end");
         vFile.close();
         aFile.close();
 
@@ -275,12 +297,12 @@ void setup()
         gfx->setTextColor(LEGEND_E_COLOR);
         gfx->printf("Decode video: %lu ms (%0.1f %%)\n", total_decode_video_ms, 100.0 * total_decode_video_ms / time_used);
       }
-//       delay(60000);
-// #ifdef GFX_BL
-//       digitalWrite(GFX_BL, LOW);
-// #endif
-//       gfx->displayOff();
-//       esp_deep_sleep_start();
+      // delay(60000);
+#ifdef GFX_BL
+      // digitalWrite(GFX_BL, LOW);
+#endif
+      // gfx->displayOff();
+      // esp_deep_sleep_start();
     }
   }
 }
