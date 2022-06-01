@@ -92,7 +92,8 @@ void setup()
   // if (!SPIFFS.begin(false, "/root"))
   // if (!FFat.begin(false, "/root"))
   SPIClass spi = SPIClass(HSPI);
-  spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
+  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
+  spi.begin(14 /* SCK */, 12 /* MISO */, 15 /* MOSI */, 13 /* CS */);
   if (!SD.begin(13, spi, 80000000))
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
   // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
