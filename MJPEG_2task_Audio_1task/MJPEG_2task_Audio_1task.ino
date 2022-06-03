@@ -93,7 +93,7 @@ void setup()
   // if (!FFat.begin(false, "/root"))
   SPIClass spi = SPIClass(HSPI);
   // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  spi.begin(14 /* SCK */, 12 /* MISO */, 15 /* MOSI */, 13 /* CS */);
+  spi.begin(14 /* SCK */, 4 /* MISO */, 15 /* MOSI */, 13 /* CS */);
   if (!SD.begin(13, spi, 80000000))
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
   // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
@@ -147,6 +147,11 @@ void setup()
       }
       else
       {
+        Serial.println("Init video");
+        gfx->println("Init video");
+        mjpeg_setup(&vFile, MJPEG_BUFFER_SIZE, drawMCU,
+                    false /* useBigEndian */, DECODEASSIGNCORE, DRAWASSIGNCORE);
+
         Serial.println("Start play audio task");
         gfx->println("Start play audio task");
         BaseType_t ret_val;
@@ -163,11 +168,6 @@ void setup()
           Serial.printf("Audio player task start failed: %d\n", ret_val);
           gfx->printf("Audio player task start failed: %d\n", ret_val);
         }
-
-        Serial.println("Start play audio task");
-        gfx->println("Init video");
-        mjpeg_setup(&vFile, MJPEG_BUFFER_SIZE, drawMCU,
-                    false /* useBigEndian */, DECODEASSIGNCORE, DRAWASSIGNCORE);
 
         Serial.println("Start play video");
         gfx->println("Start play video");
