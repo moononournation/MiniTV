@@ -157,7 +157,7 @@ bool mjpeg_setup(Stream *input, int32_t mjpegBufufSize, JPEG_DRAW_CALLBACK *pfnD
   xTaskCreatePinnedToCore(
       (TaskFunction_t)decode_task,
       (const char *const)"MJPEG decode Task",
-      (const uint32_t)1600,
+      (const uint32_t)2000,
       (void *const)&_pDecodeTask,
       (UBaseType_t)configMAX_PRIORITIES - 1,
       (TaskHandle_t *const)&_decodeTask,
@@ -165,7 +165,7 @@ bool mjpeg_setup(Stream *input, int32_t mjpegBufufSize, JPEG_DRAW_CALLBACK *pfnD
   xTaskCreatePinnedToCore(
       (TaskFunction_t)draw_task,
       (const char *const)"MJPEG Draw Task",
-      (const uint32_t)1600,
+      (const uint32_t)2000,
       (void *const)&_pDrawTask,
       (UBaseType_t)configMAX_PRIORITIES - 1,
       (TaskHandle_t *const)&_draw_task,

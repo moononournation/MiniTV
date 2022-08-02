@@ -98,7 +98,7 @@ static BaseType_t aac_player_task_start(Stream *input)
     return xTaskCreatePinnedToCore(
         (TaskFunction_t)aac_player_task,
         (const char *const)"AAC Player Task",
-        (const uint32_t)1600,
+        (const uint32_t)2000,
         (void *const)input,
         (UBaseType_t)configMAX_PRIORITIES - 1,
         (TaskHandle_t *const)NULL,

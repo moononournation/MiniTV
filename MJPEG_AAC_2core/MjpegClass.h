@@ -96,7 +96,7 @@ public:
     xTaskCreatePinnedToCore(
         (TaskFunction_t)draw_task,
         (const char *const)"Draw Task",
-        (const uint32_t)1600,
+        (const uint32_t)2000,
         (void *const)&_pDrawTask,
         (UBaseType_t)configMAX_PRIORITIES - 1,
         (TaskHandle_t *const)&_drawTask,

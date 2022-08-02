@@ -141,7 +141,7 @@ static BaseType_t aac_player_task_start(Stream *input, BaseType_t audioAssignCor
     return xTaskCreatePinnedToCore(
         (TaskFunction_t)aac_player_task,
         (const char *const)"AAC Player Task",
-        (const uint32_t)1600,
+        (const uint32_t)2000,
         (void *const)input,
         (UBaseType_t)configMAX_PRIORITIES - 1,
         (TaskHandle_t *const)NULL,
@@ -155,7 +155,7 @@ static BaseType_t mp3_player_task_start(Stream *input, BaseType_t audioAssignCor
     return xTaskCreatePinnedToCore(
         (TaskFunction_t)mp3_player_task,
         (const char *const)"MP3 Player Task",
-        (const uint32_t)1600,
+        (const uint32_t)2000,
         (void *const)input,
         (UBaseType_t)configMAX_PRIORITIES - 1,
         (TaskHandle_t *const)NULL,
