@@ -27,3 +27,6 @@ Various example for playing audio and video
 
 #### 320x240@30fps
 `ffmpeg -i input.mp4 -vf "fps=30,scale=-1:240:flags=lanczos,crop=320:in_h:(in_w-320)/2:0" -q:v 11 320_30fps.mjpeg`
+
+#### 480x270@12fps
+`ffmpeg -i input.mp4 -vf "fps=12,scale=480:-1:flags=lanczos" -q:v 9 480_12fps.mjpeg`
