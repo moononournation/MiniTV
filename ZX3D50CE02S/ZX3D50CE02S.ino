@@ -57,7 +57,8 @@ void setup()
 
   WiFi.mode(WIFI_OFF);
   Serial.begin(115200);
-  // while (!Serial);
+  Serial.setDebugOutput(true);
+  while (!Serial);
 
   // Init Display
   gfx->begin();
@@ -90,11 +91,15 @@ void setup()
   gfx->println("Init FS");
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
-  if (!FFat.begin(false, "/root"))
-  // SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // spi.begin(14 /* SCK */, 4 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // if (!SD.begin(13, spi, 80000000))
+  // if (!FFat.begin(false, "/root"))
+
+  SPIClass spi = SPIClass(HSPI);
+  spi.begin(39 /* SCK */, 38 /* MISO */, 40 /* MOSI */, 41 /* CS */);
+  if (!SD.begin(41 /* CS */, spi, 80000000))
+
+  // pinMode(41 /* CS */, OUTPUT);
+  // digitalWrite(41 /* CS */, HIGH);
+  // SD_MMC.setPins(39 /* SCK */, 40 /* MOSI */, 38 /* MISO */);
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
   // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
   {
@@ -108,8 +113,8 @@ void setup()
     gfx->println("Open AAC file: " AAC_FILENAME);
     // File aFile = LittleFS.open(AAC_FILENAME);
     // File aFile = SPIFFS.open(AAC_FILENAME);
-    File aFile = FFat.open(AAC_FILENAME);
-    // File aFile = SD.open(AAC_FILENAME);
+    // File aFile = FFat.open(AAC_FILENAME);
+    File aFile = SD.open(AAC_FILENAME);
     // File aFile = SD_MMC.open(AAC_FILENAME);
     if (aFile)
     {
@@ -121,8 +126,8 @@ void setup()
       gfx->println("Open MP3 file: " MP3_FILENAME);
       // aFile = LittleFS.open(MP3_FILENAME);
       // aFile = SPIFFS.open(MP3_FILENAME);
-      aFile = FFat.open(MP3_FILENAME);
-      // aFile = SD.open(MP3_FILENAME);
+      // aFile = FFat.open(MP3_FILENAME);
+      aFile = SD.open(MP3_FILENAME);
       // aFile = SD_MMC.open(MP3_FILENAME);
     }
 
@@ -137,8 +142,8 @@ void setup()
       gfx->println("Open MJPEG file: " MJPEG_FILENAME);
       // File vFile = LittleFS.open(MJPEG_FILENAME);
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
-      File vFile = FFat.open(MJPEG_FILENAME);
-      // File vFile = SD.open(MJPEG_FILENAME);
+      // File vFile = FFat.open(MJPEG_FILENAME);
+      File vFile = SD.open(MJPEG_FILENAME);
       // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
