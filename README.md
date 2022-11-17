@@ -30,3 +30,6 @@ Various example for playing audio and video
 
 #### 480x270@12fps
 `ffmpeg -i input.mp4 -vf "fps=12,scale=480:-1:flags=lanczos" -q:v 9 480_12fps.mjpeg`
+
+#### 480x270@15fps
+`ffmpeg -i input.mp4 -vf "fps=15,scale=480:-1:flags=lanczos" -q:v 9 480_15fps.mjpeg`
