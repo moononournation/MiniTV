@@ -10,10 +10,13 @@
 //#define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
 #define MJPEG_FILENAME "/480_15fps.mjpeg"
+// #define MJPEG_FILENAME "/480_30fps.mjpeg"
 #define FPS 15
+// #define FPS 30
 //#define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
 // #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 8)
 #define MJPEG_BUFFER_SIZE (480 * 270 * 2 / 8)
+
 #define AUDIOASSIGNCORE 1
 #define DECODEASSIGNCORE 0
 #define DRAWASSIGNCORE 1
