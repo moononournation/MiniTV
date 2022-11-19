@@ -37,7 +37,7 @@ static unsigned long total_show_video_ms = 0;
 
 Stream *_input;
 
-int32_t _mjpegBufufSize;
+int32_t _mjpegBufSize;
 
 uint8_t *_read_buf;
 int32_t _mjpeg_buf_offset = 0;
@@ -117,16 +117,16 @@ static void draw_task(void *arg)
   vTaskDelete(NULL);
 }
 
-bool mjpeg_setup(Stream *input, int32_t mjpegBufufSize, JPEG_DRAW_CALLBACK *pfnDraw,
+bool mjpeg_setup(Stream *input, int32_t mjpegBufSize, JPEG_DRAW_CALLBACK *pfnDraw,
                  bool useBigEndian, BaseType_t decodeAssignCore, BaseType_t drawAssignCore)
 {
   _input = input;
-  _mjpegBufufSize = mjpegBufufSize;
+  _mjpegBufSize = mjpegBufSize;
   _useBigEndian = useBigEndian;
 
   for (int i = 0; i < NUMBER_OF_DECODE_BUFFER; ++i)
   {
-    _mjpegBufs[i].buf = (uint8_t *)malloc(mjpegBufufSize);
+    _mjpegBufs[i].buf = (uint8_t *)malloc(mjpegBufSize);
     if (_mjpegBufs[i].buf)
     {
       log_i("#%d decode buffer allocated.", i);
@@ -270,8 +270,8 @@ bool mjpeg_read_frame()
     if (found_FFD9)
     {
       // log_i("Found FFD9 at: %d.", _mjpeg_buf_offset);
-      if (_mjpeg_buf_offset > _mjpegBufufSize) {
-        log_e("_mjpeg_buf_offset(%d) > _mjpegBufufSize (%d)", _mjpeg_buf_offset, _mjpegBufufSize);
+      if (_mjpeg_buf_offset > _mjpegBufSize) {
+        log_e("_mjpeg_buf_offset(%d) > _mjpegBufSize (%d)", _mjpeg_buf_offset, _mjpegBufSize);
       }
       return true;
     }
