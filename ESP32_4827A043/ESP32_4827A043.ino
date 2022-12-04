@@ -36,7 +36,7 @@
 
 /* Arduino_GFX */
 #include <Arduino_GFX_Library.h>
-#define TFT_BL 2
+#define GFX_BL 2
 Arduino_DataBus *bus = new Arduino_ESP32LCD16(
     48 /* DC */, 45 /* CS */, 47 /* WR */, 21 /* RD */,
     5 /* D0 */, 6 /* D1 */, 7 /* D2 */, 15 /* D3 */, 16 /* D4 */, 4 /* D5 */, 8 /* D6 */, 3 /* D7 */,
