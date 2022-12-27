@@ -16,6 +16,9 @@ Various example for playing audio and video
 
 ### MJPEG Video
 
+#### 288x240@12fps
+`ffmpeg -i input.mp4 -vf "fps=12,scale=-1:240:flags=lanczos,crop=288:in_h:(in_w-288)/2:0" -q:v 11 288_12fps.mjpeg`
+
 #### 288x240@15fps
 `ffmpeg -i input.mp4 -vf "fps=15,scale=-1:240:flags=lanczos,crop=288:in_h:(in_w-288)/2:0" -q:v 11 288_15fps.mjpeg`
 
@@ -36,3 +39,6 @@ Various example for playing audio and video
 
 #### 480x272@30fps
 `ffmpeg -i input.mp4 -vf "fps=30,scale=-1:272:flags=lanczos,crop=480:in_h:(in_w-480)/2:0" -q:v 9 480_30fps.mjpeg`
+
+#### 800x@8fps
+`ffmpeg -i input.mp4 -vf "fps=8,scale=-1:480:flags=lanczos,crop=800:in_h:(in_w-800)/2:0" -q:v 9 800_8fps.mjpeg`

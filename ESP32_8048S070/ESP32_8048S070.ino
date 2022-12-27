@@ -7,15 +7,18 @@
 // auto fall back to MP3 if AAC file not available
 #define AAC_FILENAME "/44100.aac"
 #define MP3_FILENAME "/44100.mp3"
-// #define MJPEG_FILENAME "/288_30fps.mjpeg"
+//#define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
-#define MJPEG_FILENAME "/480_15fps.mjpeg"
+// #define MJPEG_FILENAME "/480_15fps.mjpeg"
 // #define MJPEG_FILENAME "/480_30fps.mjpeg"
-#define FPS 15
+#define MJPEG_FILENAME "/800_8fps.mjpeg"
+#define FPS 8
+// #define FPS 15
 // #define FPS 30
-// #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
+//#define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
 // #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 8)
-#define MJPEG_BUFFER_SIZE (480 * 270 * 2 / 8)
+// #define MJPEG_BUFFER_SIZE (480 * 270 * 2 / 8)
+#define MJPEG_BUFFER_SIZE (800 * 480 * 2 / 8)
 
 #define AUDIOASSIGNCORE 1
 #define DECODEASSIGNCORE 0
@@ -37,11 +40,18 @@
 /* Arduino_GFX */
 #include <Arduino_GFX_Library.h>
 #define GFX_BL 2
-Arduino_DataBus *bus = new Arduino_ESP32LCD16(
-    48 /* DC */, 45 /* CS */, 47 /* WR */, 21 /* RD */,
-    5 /* D0 */, 6 /* D1 */, 7 /* D2 */, 15 /* D3 */, 16 /* D4 */, 4 /* D5 */, 8 /* D6 */, 3 /* D7 */,
-    46 /* D8 */, 9 /* D9 */, 1 /* D10 */, 42 /* D11 */, 39 /* D12 */, 41 /* D13 */, 40 /* D14 */, 14 /* D15 */);
-Arduino_GFX *gfx = new Arduino_NV3041A(bus, 17 /* RST */, 0 /* rotation */, true /* IPS */);
+Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
+    GFX_NOT_DEFINED /* CS */, GFX_NOT_DEFINED /* SCK */, GFX_NOT_DEFINED /* SDA */,
+    41 /* DE */, 40 /* VSYNC */, 39 /* HSYNC */, 42 /* PCLK */,
+    14 /* R0 */, 21 /* R1 */, 47 /* R2 */, 48 /* R3 */, 45 /* R4 */,
+    9 /* G0 */, 46 /* G1 */, 3 /* G2 */, 8 /* G3 */, 16 /* G4 */, 1 /* G5 */,
+    15 /* B0 */, 7 /* B1 */, 6 /* B2 */, 5 /* B3 */, 4 /* B4 */
+);
+Arduino_RPi_DPI_RGBPanel *gfx = new Arduino_RPi_DPI_RGBPanel(
+    bus,
+    800 /* width */, 0 /* hsync_polarity */, 210 /* hsync_front_porch */, 30 /* hsync_pulse_width */, 16 /* hsync_back_porch */,
+    480 /* height */, 0 /* vsync_polarity */, 22 /* vsync_front_porch */, 13 /* vsync_pulse_width */, 10 /* vsync_back_porch */,
+    1 /* pclk_active_neg */, 16000000 /* prefer_speed */, true /* auto_flush */);
 
 /* variables */
 static int next_frame = 0;
@@ -94,14 +104,11 @@ void setup()
   gfx->println("Init FS");
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
-  if (!FFat.begin(false, "/root"))
-
-  // SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // spi.begin(14 /* SCK */, 4 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // if (!SD.begin(13, spi, 80000000))
+  // if (!FFat.begin(false, "/root"))
+   SPIClass spi = SPIClass(HSPI);
+   spi.begin(SDMMC_CLK, SDMMC_D0 /* MISO */, SDMMC_CMD /* MOSI */, SDMMC_D3 /* SS */);
+   if (!SD.begin(SDMMC_D3 /* SS */, spi, 80000000, "/root"))
   // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
-
   // pinMode(SDMMC_D3 /* CS */, OUTPUT);
   // digitalWrite(SDMMC_D3 /* CS */, HIGH);
   // SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0);
@@ -117,8 +124,8 @@ void setup()
     gfx->println("Open AAC file: " AAC_FILENAME);
     // File aFile = LittleFS.open(AAC_FILENAME);
     // File aFile = SPIFFS.open(AAC_FILENAME);
-    File aFile = FFat.open(AAC_FILENAME);
-    // File aFile = SD.open(AAC_FILENAME);
+    // File aFile = FFat.open(AAC_FILENAME);
+    File aFile = SD.open(AAC_FILENAME);
     // File aFile = SD_MMC.open(AAC_FILENAME);
     if (aFile)
     {
@@ -130,8 +137,8 @@ void setup()
       gfx->println("Open MP3 file: " MP3_FILENAME);
       // aFile = LittleFS.open(MP3_FILENAME);
       // aFile = SPIFFS.open(MP3_FILENAME);
-      aFile = FFat.open(MP3_FILENAME);
-      // aFile = SD.open(MP3_FILENAME);
+      // aFile = FFat.open(MP3_FILENAME);
+      aFile = SD.open(MP3_FILENAME);
       // aFile = SD_MMC.open(MP3_FILENAME);
     }
 
@@ -146,9 +153,9 @@ void setup()
       gfx->println("Open MJPEG file: " MJPEG_FILENAME);
       // File vFile = LittleFS.open(MJPEG_FILENAME);
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
-      File vFile = FFat.open(MJPEG_FILENAME);
-      // File vFile = SD.open(MJPEG_FILENAME);
-      //      File vFile = SD_MMC.open(MJPEG_FILENAME);
+      // File vFile = FFat.open(MJPEG_FILENAME);
+      File vFile = SD.open(MJPEG_FILENAME);
+      // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
         Serial.println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
@@ -214,6 +221,8 @@ void setup()
         Serial.println("AV end");
         vFile.close();
         aFile.close();
+
+        delay(200);
 
         int played_frames = total_frames - skipped_frames;
         float fps = 1000.0 * played_frames / time_used;
