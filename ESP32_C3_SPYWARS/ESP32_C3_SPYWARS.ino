@@ -15,7 +15,7 @@ const char *mjpeg_files[] = {
     "/EP20.mjpeg"};
 #define FPS 10
 #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 10)
-#define UP_BTN_PIN 13
+#define UP_BTN_PIN 0
 #define DOWN_BTN_PIN 9
 
 #include <WiFi.h>
