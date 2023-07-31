@@ -48,7 +48,7 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
 }
 
 static int _samprate = 0;
-static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len)
+static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len, void*)
 {
     unsigned long s = millis();
     if (_samprate != info.samprate)
