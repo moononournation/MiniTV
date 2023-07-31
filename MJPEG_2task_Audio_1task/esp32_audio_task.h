@@ -49,7 +49,7 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
 }
 
 static int _samprate = 0;
-static void aacAudioDataCallback(AACFrameInfo &info, int16_t *pwm_buffer, size_t len)
+static void aacAudioDataCallback(AACFrameInfo &info, int16_t *pwm_buffer, size_t len, void*)
 {
     unsigned long s = millis();
     if (_samprate != info.sampRateOut)
@@ -64,7 +64,7 @@ static void aacAudioDataCallback(AACFrameInfo &info, int16_t *pwm_buffer, size_t
     // log_i("len: %d, i2s_bytes_written: %d", len, i2s_bytes_written);
     total_play_audio_ms += millis() - s;
 }
-static void mp3AudioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len)
+static void mp3AudioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t len, void*)
 {
     unsigned long s = millis();
     if (_samprate != info.samprate)
