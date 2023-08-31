@@ -1,13 +1,14 @@
 /***
  * Required libraries:
- * https://github.com/moononournation/Arduino_GFX.git
- * https://github.com/pschatzmann/arduino-libhelix.git
- * https://github.com/bitbank2/JPEGDEC.git
+ * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
+ * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
+ * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
  */
+
 // auto fall back to MP3 if AAC file not available
 #define AAC_FILENAME "/44100.aac"
 #define MP3_FILENAME "/44100.mp3"
-//#define MJPEG_FILENAME "/288_30fps.mjpeg"
+// #define MJPEG_FILENAME "/288_30fps.mjpeg"
 // #define MJPEG_FILENAME "/320_30fps.mjpeg"
 // #define MJPEG_FILENAME "/480_15fps.mjpeg"
 // #define MJPEG_FILENAME "/480_30fps.mjpeg"
@@ -15,7 +16,7 @@
 #define FPS 8
 // #define FPS 15
 // #define FPS 30
-//#define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
+// #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 8)
 // #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 8)
 // #define MJPEG_BUFFER_SIZE (480 * 270 * 2 / 8)
 #define MJPEG_BUFFER_SIZE (800 * 480 * 2 / 8)
@@ -31,13 +32,16 @@
 
 #include <WiFi.h>
 #include <FS.h>
-#include <LittleFS.h>
-#include <SPIFFS.h>
+
 #include <FFat.h>
+#include <LittleFS.h>
 #include <SD.h>
 #include <SD_MMC.h>
+#include <SPIFFS.h>
 
-/* Arduino_GFX */
+/*******************************************************************************
+ * Start of Arduino_GFX setting
+ ******************************************************************************/
 #include <Arduino_GFX_Library.h>
 #define GFX_BL 2
 Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
@@ -52,6 +56,9 @@ Arduino_RPi_DPI_RGBPanel *gfx = new Arduino_RPi_DPI_RGBPanel(
     800 /* width */, 0 /* hsync_polarity */, 210 /* hsync_front_porch */, 30 /* hsync_pulse_width */, 16 /* hsync_back_porch */,
     480 /* height */, 0 /* vsync_polarity */, 22 /* vsync_front_porch */, 13 /* vsync_pulse_width */, 10 /* vsync_back_porch */,
     1 /* pclk_active_neg */, 16000000 /* prefer_speed */, true /* auto_flush */);
+/*******************************************************************************
+ * End of Arduino_GFX setting
+ ******************************************************************************/
 
 /* variables */
 static int next_frame = 0;
@@ -76,14 +83,22 @@ static int drawMCU(JPEGDRAW *pDraw)
 
 void setup()
 {
-  disableCore0WDT();
-
   WiFi.mode(WIFI_OFF);
-  Serial.begin(115200);
-  // while (!Serial);
 
-  // Init Display
-  gfx->begin();
+  Serial.begin(115200);
+  // Serial.setDebugOutput(true);
+  // while(!Serial);
+  Serial.println("ESP32_8048S070");
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  Serial.println("Init display");
+  if (!gfx->begin())
+  {
+    Serial.println("Init display failed!");
+  }
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -105,10 +120,11 @@ void setup()
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
   // if (!FFat.begin(false, "/root"))
+
    SPIClass spi = SPIClass(HSPI);
    spi.begin(SDMMC_CLK, SDMMC_D0 /* MISO */, SDMMC_CMD /* MOSI */, SDMMC_D3 /* SS */);
    if (!SD.begin(SDMMC_D3 /* SS */, spi, 80000000, "/root"))
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
+
   // pinMode(SDMMC_D3 /* CS */, OUTPUT);
   // digitalWrite(SDMMC_D3 /* CS */, HIGH);
   // SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0);
@@ -316,6 +332,7 @@ void setup()
         gfx->setTextColor(LEGEND_E_COLOR);
         gfx->printf("Decode video: %lu ms (%0.1f %%)\n", total_decode_video_ms, 100.0 * total_decode_video_ms / time_used);
       }
+
       // delay(60000);
 #ifdef GFX_BL
       // digitalWrite(GFX_BL, LOW);

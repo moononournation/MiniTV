@@ -1,9 +1,10 @@
-/*
-   require libraries:
-   https://github.com/moononournation/Arduino_GFX.git
-   https://github.com/pschatzmann/arduino-libhelix.git
-   https://github.com/bitbank2/JPEGDEC.git
-*/
+/***
+ * Required libraries:
+ * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
+ * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
+ * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
+ */
+
 #define AUDIO_FILENAME "/44100.aac"
 // #define MJPEG_FILENAME "/288_15fps.mjpeg"
 #define MJPEG_FILENAME "/320_15fps.mjpeg"
@@ -11,15 +12,23 @@
 // #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 10)
 #define MJPEG_BUFFER_SIZE (320 * 240 * 2 / 10)
 
+// #define SDMMC_D3 10  // SDMMC Data3 / SPI CS
+// #define SDMMC_CMD 11 // SDMMC CMD   / SPI MOSI
+// #define SDMMC_CLK 12 // SDMMC CLK   / SPI SCK
+// #define SDMMC_D0 13  // SDMMC Data0 / SPI MISO
+
 #include <WiFi.h>
 #include <FS.h>
-#include <LittleFS.h>
-#include <SPIFFS.h>
+
 #include <FFat.h>
+#include <LittleFS.h>
 #include <SD.h>
 #include <SD_MMC.h>
+#include <SPIFFS.h>
 
-/* Arduino_GFX */
+/*******************************************************************************
+ * Start of Arduino_GFX setting
+ ******************************************************************************/
 #include <Arduino_GFX_Library.h>
 #define GFX_BL DF_GFX_BL // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
 /* More data bus class: https://github.com/moononournation/Arduino_GFX/wiki/Data-Bus-Class */
@@ -27,6 +36,9 @@ Arduino_DataBus *bus = create_default_Arduino_DataBus();
 /* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
 Arduino_GFX *gfx = new Arduino_ILI9341(bus, DF_GFX_RST, 3 /* rotation */, false /* IPS */);
 // Arduino_GFX *gfx = new Arduino_ST7789(bus, DF_GFX_RST, 1 /* rotation */, true /* IPS */, 240 /* width */, 288 /* height */, 0 /* col offset 1 */, 20 /* row offset 1 */, 0 /* col offset 2 */, 12 /* row offset 2 */);
+/*******************************************************************************
+ * End of Arduino_GFX setting
+ ******************************************************************************/
 
 /* variables */
 static int next_frame = 0;
@@ -56,11 +68,21 @@ static int drawMCU(JPEGDRAW *pDraw)
 void setup()
 {
   WiFi.mode(WIFI_OFF);
-  Serial.begin(115200);
-  // while (!Serial);
 
-  // Init Display
-  gfx->begin(80000000);
+  Serial.begin(115200);
+  // Serial.setDebugOutput(true);
+  // while(!Serial);
+  Serial.println("MJPEG_2task_Audio_1task");
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  Serial.println("Init display");
+  if (!gfx->begin(80000000))
+  {
+    Serial.println("Init display failed!");
+  }
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -68,15 +90,16 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 #endif
 
+  Serial.println("Init I2S");
   gfx->println("Init I2S");
-#if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S2)
+#if defined(ESP32) && (CONFIG_IDF_TARGET_ESP32)
+  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
+#elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S2)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 4 /* SCLK */, 5 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32S3)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, 42 /* MCLK */, 46 /* SCLK */, 45 /* LRCK */, 43 /* DOUT */, 44 /* DIN */);
 #elif defined(ESP32) && (CONFIG_IDF_TARGET_ESP32C3)
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 10 /* SCLK */, 19 /* LRCK */, 18 /* DOUT */, -1 /* DIN */);
-#else
-  esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 25 /* SCLK */, 26 /* LRCK */, 32 /* DOUT */, -1 /* DIN */);
 #endif
   if (ret_val != ESP_OK)
   {
@@ -84,18 +107,23 @@ void setup()
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
 
+  Serial.println("Init FS");
   gfx->println("Init FS");
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
   if (!FFat.begin(false, "/root"))
+
   // SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // if (!SD.begin(13, spi, 80000000))
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
-  // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
+  // spi.begin(SDMMC_CLK, SDMMC_D0 /* MISO */, SDMMC_CMD /* MOSI */, SDMMC_D3 /* SS */);
+  // if (!SD.begin(SDMMC_D3 /* SS */, spi, 80000000))
+
+  // pinMode(SDMMC_D3 /* CS */, OUTPUT);
+  // digitalWrite(SDMMC_D3 /* CS */, HIGH);
+  // SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0);
+  // if (!SD_MMC.begin("/root", true)) /* 1-bit SD bus mode */
   {
-    Serial.println(F("ERROR: File system mount failed!"));
-    gfx->println(F("ERROR: File system mount failed!"));
+    Serial.println("ERROR: File system mount failed!");
+    gfx->println("ERROR: File system mount failed!");
   }
   else
   {
@@ -107,8 +135,8 @@ void setup()
     // File aFile = SD_MMC.open(AUDIO_FILENAME);
     if (!aFile || aFile.isDirectory())
     {
-      Serial.println(F("ERROR: Failed to open " AUDIO_FILENAME " file for reading"));
-      gfx->println(F("ERROR: Failed to open " AUDIO_FILENAME " file for reading"));
+      Serial.println("ERROR: Failed to open " AAC_FILENAME " or " MP3_FILENAME " file for reading");
+      gfx->println("ERROR: Failed to open " AAC_FILENAME " or " MP3_FILENAME " file for reading");
     }
     else
     {
@@ -120,19 +148,19 @@ void setup()
       // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
-        Serial.println(F("ERROR: Failed to open " MJPEG_FILENAME " file for reading"));
-        gfx->println(F("ERROR: Failed to open " MJPEG_FILENAME " file for reading"));
+        Serial.println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
+        gfx->println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
       }
       else
       {
         uint8_t *mjpeg_buf = (uint8_t *)malloc(MJPEG_BUFFER_SIZE);
         if (!mjpeg_buf)
         {
-          Serial.println(F("mjpeg_buf malloc failed!"));
+          Serial.println("mjpeg_buf malloc failed!");
         }
         else
         {
-          Serial.println(F("AAC audio MJPEG video start"));
+          Serial.println("AAC audio MJPEG video start");
 
           gfx->println("Start play audio task");
           BaseType_t ret_val = aac_player_task_start(&aFile);
@@ -165,7 +193,7 @@ void setup()
             else
             {
               ++skipped_frames;
-              Serial.println(F("Skip frame"));
+              Serial.println("Skip frame");
             }
 
             while (millis() < next_frame_ms)
@@ -178,9 +206,12 @@ void setup()
           }
           int time_used = millis() - start_ms;
           int total_frames = next_frame - 1;
-          Serial.println(F("AAC audio MJPEG video end"));
+          Serial.println("AAC audio MJPEG video end");
           vFile.close();
           aFile.close();
+
+          delay(200);
+
           int played_frames = total_frames - skipped_frames;
           float fps = 1000.0 * played_frames / time_used;
           total_decode_audio_ms -= total_play_audio_ms;
@@ -218,7 +249,7 @@ void setup()
 
           int16_t r1 = ((gfx->height() - CHART_MARGIN - CHART_MARGIN) / 2);
           int16_t r2 = r1 / 2;
-          int16_t cx = gfx->width() - r1 - 2;
+          int16_t cx = gfx->width() - r1 - 10;
           int16_t cy = r1 + CHART_MARGIN;
 
           float arc_start1 = 0;
@@ -274,12 +305,13 @@ void setup()
           gfx->printf("Show video: %lu ms (%0.1f %%)\n", total_show_video_ms, 100.0 * total_show_video_ms / time_used);
         }
       }
-      delay(60000);
+
+      // delay(60000);
 #ifdef GFX_BL
-      digitalWrite(GFX_BL, LOW);
+      // digitalWrite(GFX_BL, LOW);
 #endif
-      gfx->displayOff();
-      esp_deep_sleep_start();
+      // gfx->displayOff();
+      // esp_deep_sleep_start();
     }
   }
 }

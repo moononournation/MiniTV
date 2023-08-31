@@ -1,9 +1,10 @@
 /***
  * Required libraries:
- * https://github.com/moononournation/Arduino_GFX.git
- * https://github.com/pschatzmann/arduino-libhelix.git
- * https://github.com/bitbank2/JPEGDEC.git
+ * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
+ * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
+ * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
  */
+
 // auto fall back to MP3 if AAC file not available
 #define AAC_FILENAME "/44100.aac"
 #define MP3_FILENAME "/44100.mp3"
@@ -16,20 +17,32 @@
 #define DECODEASSIGNCORE 0
 #define DRAWASSIGNCORE 1
 
+#define SDMMC_D3 13  // SDMMC Data3 / SPI CS
+#define SDMMC_CMD 15 // SDMMC CMD   / SPI MOSI
+#define SDMMC_CLK 14 // SDMMC CLK   / SPI SCK
+// #define SDMMC_D0 2  // SDMMC Data0 / SPI MISO
+#define SDMMC_D0 4  // SDMMC Data0 / SPI MISO
+
 #include <WiFi.h>
 #include <FS.h>
-#include <LittleFS.h>
-#include <SPIFFS.h>
+
 #include <FFat.h>
+#include <LittleFS.h>
 #include <SD.h>
 #include <SD_MMC.h>
+#include <SPIFFS.h>
 
-/* Arduino_GFX */
+/*******************************************************************************
+ * Start of Arduino_GFX setting
+ ******************************************************************************/
 #include <Arduino_GFX_Library.h>
 #define GFX_BL DF_GFX_BL // default backlight pin, you may replace DF_GFX_BL to actual backlight pin
 Arduino_DataBus *bus = create_default_Arduino_DataBus();
 // Arduino_GFX *gfx = new Arduino_ILI9341(bus, DF_GFX_RST, 3 /* rotation */, false /* IPS */);
 Arduino_GFX *gfx = new Arduino_ST7789(bus, DF_GFX_RST, 1 /* rotation */, true /* IPS */, 240 /* width */, 288 /* height */, 0 /* col offset 1 */, 20 /* row offset 1 */, 0 /* col offset 2 */, 12 /* row offset 2 */);
+/*******************************************************************************
+ * End of Arduino_GFX setting
+ ******************************************************************************/
 
 /* variables */
 static int next_frame = 0;
@@ -54,14 +67,22 @@ static int drawMCU(JPEGDRAW *pDraw)
 
 void setup()
 {
-  disableCore0WDT();
-
   WiFi.mode(WIFI_OFF);
-  Serial.begin(115200);
-  // while (!Serial);
 
-  // Init Display
-  gfx->begin(80000000);
+  Serial.begin(115200);
+  // Serial.setDebugOutput(true);
+  // while(!Serial);
+  Serial.println("MJPEG_2task_Audio_1task");
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  Serial.println("Init display");
+  if (!gfx->begin(80000000))
+  {
+    Serial.println("Init display failed!");
+  }
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -91,12 +112,15 @@ void setup()
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
   // if (!FFat.begin(false, "/root"))
+
   SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  spi.begin(14 /* SCK */, 4 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  if (!SD.begin(13, spi, 80000000))
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
-  // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
+  spi.begin(SDMMC_CLK, SDMMC_D0 /* MISO */, SDMMC_CMD /* MOSI */, SDMMC_D3 /* SS */);
+  if (!SD.begin(SDMMC_D3 /* SS */, spi, 80000000))
+
+  // pinMode(SDMMC_D3 /* CS */, OUTPUT);
+  // digitalWrite(SDMMC_D3 /* CS */, HIGH);
+  // SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0);
+  // if (!SD_MMC.begin("/root", true)) /* 1-bit SD bus mode */
   {
     Serial.println("ERROR: File system mount failed!");
     gfx->println("ERROR: File system mount failed!");
@@ -206,6 +230,8 @@ void setup()
         vFile.close();
         aFile.close();
 
+        delay(200);
+
         int played_frames = total_frames - skipped_frames;
         float fps = 1000.0 * played_frames / time_used;
         total_decode_audio_ms -= total_play_audio_ms;
@@ -298,6 +324,7 @@ void setup()
         gfx->setTextColor(LEGEND_E_COLOR);
         gfx->printf("Decode video: %lu ms (%0.1f %%)\n", total_decode_video_ms, 100.0 * total_decode_video_ms / time_used);
       }
+
       // delay(60000);
 #ifdef GFX_BL
       // digitalWrite(GFX_BL, LOW);

@@ -1,18 +1,21 @@
-/*
-   require libraries:
-   https://github.com/moononournation/Arduino_GFX.git
-   https://github.com/pschatzmann/arduino-libhelix.git
-   https://github.com/bitbank2/JPEGDEC.git
-*/
+/***
+ * Required libraries:
+ * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
+ * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
+ * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
+ */
+
 const char *jpeg_file = "/SPY_WARS.jpg";
 const char *mp3_files[] = {
     "/EP05.mp3",
     "/EP15.mp3",
-    "/EP20.mp3"};
+    "/EP20.mp3",
+};
 const char *mjpeg_files[] = {
     "/EP05.mjpeg",
     "/EP15.mjpeg",
-    "/EP20.mjpeg"};
+    "/EP20.mjpeg",
+};
 #define FPS 10
 #define MJPEG_BUFFER_SIZE (288 * 240 * 2 / 10)
 #define UP_BTN_PIN 0
@@ -20,19 +23,23 @@ const char *mjpeg_files[] = {
 
 #include <WiFi.h>
 #include <FS.h>
+
+#include <FFat.h>
 #include <LittleFS.h>
 #include <SPIFFS.h>
-#include <FFat.h>
-#include <SD.h>
-#include <SD_MMC.h>
 
-/* Arduino_GFX */
+/*******************************************************************************
+ * Start of Arduino_GFX setting
+ ******************************************************************************/
 #include <Arduino_GFX_Library.h>
 #define GFX_BL 11
 /* More data bus class: https://github.com/moononournation/Arduino_GFX/wiki/Data-Bus-Class */
 Arduino_DataBus *bus = new Arduino_ESP32SPI(6 /* DC */, 7 /* CS */, 2 /* SCK */, 3 /* MOSI */, GFX_NOT_DEFINED /* MISO */, FSPI /* spi_num */);
 /* More display class: https://github.com/moononournation/Arduino_GFX/wiki/Display-Class */
 Arduino_GFX *gfx = new Arduino_ST7789(bus, 10 /* RST */, 1 /* rotation */, true /* IPS */, 240 /* width */, 288 /* height */, 0 /* col offset 1 */, 20 /* row offset 1 */, 0 /* col offset 2 */, 12 /* row offset 2 */);
+/*******************************************************************************
+ * End of Arduino_GFX setting
+ ******************************************************************************/
 
 /* variables */
 static int next_frame = 0;
@@ -94,11 +101,21 @@ void IRAM_ATTR down_btn_pressed()
 void setup()
 {
   WiFi.mode(WIFI_OFF);
-  Serial.begin(115200);
-  // while (!Serial);
 
-  // Init Display
-  gfx->begin(80000000);
+  Serial.begin(115200);
+  // Serial.setDebugOutput(true);
+  // while(!Serial);
+  Serial.println("ESP32_C3_SPYWARS");
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  Serial.println("Init display");
+  if (!gfx->begin(80000000))
+  {
+    Serial.println("Init display failed!");
+  }
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -106,6 +123,7 @@ void setup()
   digitalWrite(GFX_BL, HIGH);
 #endif
 
+  Serial.println("Init I2S");
   gfx->println("Init I2S");
   esp_err_t ret_val = i2s_init(I2S_NUM_0, 44100, -1 /* MCLK */, 4 /* SCLK */, 5 /* LRCK */, 8 /* DOUT */, -1 /* DIN */);
   if (ret_val != ESP_OK)
@@ -114,35 +132,27 @@ void setup()
   }
   i2s_zero_dma_buffer(I2S_NUM_0);
 
+  Serial.println("Init FS");
   gfx->println("Init FS");
   // if (!LittleFS.begin(false, "/root"))
   // if (!SPIFFS.begin(false, "/root"))
   if (!FFat.begin(false, "/root"))
-
-  // SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // if (!SD.begin(13, spi, 80000000))
-
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
-  // if ((!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true)) && (!SD_MMC.begin("/root", true))) /* 1-bit SD bus mode */
   {
-    Serial.println(F("ERROR: File system mount failed!"));
-    gfx->println(F("ERROR: File system mount failed!"));
+    Serial.println("ERROR: File system mount failed!");
+    gfx->println("ERROR: File system mount failed!");
   }
   else
   {
     mjpeg_buf = (uint8_t *)malloc(MJPEG_BUFFER_SIZE);
     if (!mjpeg_buf)
     {
-      Serial.println(F("mjpeg_buf malloc failed!"));
+      Serial.println("mjpeg_buf malloc failed!");
     }
     else
     {
       // File jFile = LittleFS.open(jpeg_file);
       // File jFile = SPIFFS.open(jpeg_file);
       File jFile = FFat.open(jpeg_file);
-      // File jFile = SD.open(jpeg_file);
-      // File jFile = SD_MMC.open(jpeg_file);
       if (!jFile || jFile.isDirectory())
       {
         Serial.printf("ERROR: Failed to open %s file for reading\n", jpeg_file);
@@ -185,11 +195,11 @@ void loop()
       aFile.close();
     }
 
+    delay(200);
+
     // aFile = LittleFS.open(mp3_files[curr_video_idx]);
     // aFile = SPIFFS.open(mp3_files[curr_video_idx]);
     aFile = FFat.open(mp3_files[curr_video_idx]);
-    // aFile = SD.open(mp3_files[curr_video_idx]);
-    // aFile = SD_MMC.open(mp3_files[curr_video_idx]);
     if (!aFile || aFile.isDirectory())
     {
       Serial.printf("ERROR: Failed to open %s file for reading\n", mp3_files[curr_video_idx]);
@@ -202,8 +212,6 @@ void loop()
       // vFile = LittleFS.open(mjpeg_files[curr_video_idx]);
       // vFile = SPIFFS.open(mjpeg_files[curr_video_idx]);
       vFile = FFat.open(mjpeg_files[curr_video_idx]);
-      // vFile = SD.open(mjpeg_files[curr_video_idx]);
-      // vFile = SD_MMC.open(mjpeg_files[curr_video_idx]);
       if (!vFile || vFile.isDirectory())
       {
         Serial.printf("ERROR: Failed to open %s file for reading\n", mjpeg_files[curr_video_idx]);
@@ -252,7 +260,7 @@ void loop()
       }
       else
       {
-        Serial.println(F("Skip frame"));
+        Serial.println("Skip frame");
       }
     }
   }

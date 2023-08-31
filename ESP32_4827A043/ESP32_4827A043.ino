@@ -1,9 +1,10 @@
 /***
  * Required libraries:
- * https://github.com/moononournation/Arduino_GFX.git
- * https://github.com/pschatzmann/arduino-libhelix.git
- * https://github.com/bitbank2/JPEGDEC.git
+ * Arduino_GFX: https://github.com/moononournation/Arduino_GFX.git
+ * libhelix: https://github.com/pschatzmann/arduino-libhelix.git
+ * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
  */
+
 // auto fall back to MP3 if AAC file not available
 #define AAC_FILENAME "/44100.aac"
 #define MP3_FILENAME "/44100.mp3"
@@ -28,13 +29,16 @@
 
 #include <WiFi.h>
 #include <FS.h>
-#include <LittleFS.h>
-#include <SPIFFS.h>
+
 #include <FFat.h>
+#include <LittleFS.h>
 #include <SD.h>
 #include <SD_MMC.h>
+#include <SPIFFS.h>
 
-/* Arduino_GFX */
+/*******************************************************************************
+ * Start of Arduino_GFX setting
+ ******************************************************************************/
 #include <Arduino_GFX_Library.h>
 #define GFX_BL 2
 Arduino_DataBus *bus = new Arduino_ESP32LCD16(
@@ -42,6 +46,9 @@ Arduino_DataBus *bus = new Arduino_ESP32LCD16(
     5 /* D0 */, 6 /* D1 */, 7 /* D2 */, 15 /* D3 */, 16 /* D4 */, 4 /* D5 */, 8 /* D6 */, 3 /* D7 */,
     46 /* D8 */, 9 /* D9 */, 1 /* D10 */, 42 /* D11 */, 39 /* D12 */, 41 /* D13 */, 40 /* D14 */, 14 /* D15 */);
 Arduino_GFX *gfx = new Arduino_NV3041A(bus, 17 /* RST */, 0 /* rotation */, true /* IPS */);
+/*******************************************************************************
+ * End of Arduino_GFX setting
+ ******************************************************************************/
 
 /* variables */
 static int next_frame = 0;
@@ -66,14 +73,22 @@ static int drawMCU(JPEGDRAW *pDraw)
 
 void setup()
 {
-  disableCore0WDT();
-
   WiFi.mode(WIFI_OFF);
-  Serial.begin(115200);
-  // while (!Serial);
 
-  // Init Display
-  gfx->begin();
+  Serial.begin(115200);
+  // Serial.setDebugOutput(true);
+  // while(!Serial);
+  Serial.println("ESP32_4827A043");
+
+#ifdef GFX_EXTRA_PRE_INIT
+  GFX_EXTRA_PRE_INIT();
+#endif
+
+  Serial.println("Init display");
+  if (!gfx->begin())
+  {
+    Serial.println("Init display failed!");
+  }
   gfx->fillScreen(BLACK);
 
 #ifdef GFX_BL
@@ -97,10 +112,8 @@ void setup()
   if (!FFat.begin(false, "/root"))
 
   // SPIClass spi = SPIClass(HSPI);
-  // spi.begin(14 /* SCK */, 2 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // spi.begin(14 /* SCK */, 4 /* MISO */, 15 /* MOSI */, 13 /* CS */);
-  // if (!SD.begin(13, spi, 80000000))
-  // if ((!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root")) && (!SD_MMC.begin("/root"))) /* 4-bit SD bus mode */
+  // spi.begin(SDMMC_CLK, SDMMC_D0 /* MISO */, SDMMC_CMD /* MOSI */, SDMMC_D3 /* SS */);
+  // if (!SD.begin(SDMMC_D3 /* SS */, spi, 80000000))
 
   // pinMode(SDMMC_D3 /* CS */, OUTPUT);
   // digitalWrite(SDMMC_D3 /* CS */, HIGH);
@@ -148,7 +161,7 @@ void setup()
       // File vFile = SPIFFS.open(MJPEG_FILENAME);
       File vFile = FFat.open(MJPEG_FILENAME);
       // File vFile = SD.open(MJPEG_FILENAME);
-      //      File vFile = SD_MMC.open(MJPEG_FILENAME);
+      // File vFile = SD_MMC.open(MJPEG_FILENAME);
       if (!vFile || vFile.isDirectory())
       {
         Serial.println("ERROR: Failed to open " MJPEG_FILENAME " file for reading");
@@ -214,6 +227,8 @@ void setup()
         Serial.println("AV end");
         vFile.close();
         aFile.close();
+
+        delay(200);
 
         int played_frames = total_frames - skipped_frames;
         float fps = 1000.0 * played_frames / time_used;
@@ -307,6 +322,7 @@ void setup()
         gfx->setTextColor(LEGEND_E_COLOR);
         gfx->printf("Decode video: %lu ms (%0.1f %%)\n", total_decode_video_ms, 100.0 * total_decode_video_ms / time_used);
       }
+
       // delay(60000);
 #ifdef GFX_BL
       // digitalWrite(GFX_BL, LOW);
