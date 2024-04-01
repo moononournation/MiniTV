@@ -82,22 +82,22 @@ ffmpeg -i input.mp4 -vf "fps=8,scale=-1:480:flags=lanczos,crop=800:in_h:(in_w-80
 
 ```console
 ffmpeg -i spy_family/EP05.mp4 -ss 07:25.70 -t 00:31.90 -vf "scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" EP05.mpg
-ffmpeg -i spy_family/EP05.mp4 -ss 07:25.70 -t 00:31.90 -ar 44100 -ac 1 -ab 32k -filter:a loudnorm -filter:a "volume=-5dB" EP05.mp3
-ffmpeg -i spy_family/EP05.mp4 -ss 07:25.70 -t 00:31.90 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 11 EP05.mjpeg
+ffmpeg -i spy_family/EP05.mp4 -ss 07:25.70 -t 00:32.00 -ar 44100 -ac 1 -ab 16k -filter:a loudnorm -filter:a "volume=-1dB" EP05.mp3
+ffmpeg -i spy_family/EP05.mp4 -ss 07:25.70 -t 00:31.90 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 12 EP05.mjpeg
 ```
 
 ### EP15
 
 ```console
 ffmpeg -i spy_family/EP15.mp4 -ss 20:00.00 -t 00:12.00 -vf "scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" EP15.mpg
-ffmpeg -i spy_family/EP15.mp4 -ss 20:00.00 -t 00:12.00 -ar 44100 -ac 1 -ab 32k -filter:a loudnorm -filter:a "volume=-5dB" EP15.mp3
-ffmpeg -i spy_family/EP15.mp4 -ss 20:00.00 -t 00:12.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 11 EP15.mjpeg
+ffmpeg -i spy_family/EP15.mp4 -ss 20:00.00 -t 00:12.00 -ar 44100 -ac 1 -ab 16k -filter:a loudnorm -filter:a "volume=-5dB" EP15.mp3
+ffmpeg -i spy_family/EP15.mp4 -ss 20:00.00 -t 00:12.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 12 EP15.mjpeg
 ```
 
 ### EP20
 
 ```console
 ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" EP20.mpg
-ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -ar 44100 -ac 1 -ab 32k -filter:a loudnorm -filter:a "volume=-5dB" EP20.mp3
-ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 11 EP20.mjpeg
+ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -ar 44100 -ac 1 -ab 16k -filter:a loudnorm -filter:a "volume=-5dB" EP20.mp3
+ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 12 EP20.mjpeg
 ```
