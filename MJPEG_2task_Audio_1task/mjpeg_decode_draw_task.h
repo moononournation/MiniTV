@@ -175,7 +175,7 @@ bool mjpeg_setup(Stream *input, int32_t mjpegBufSize, JPEG_DRAW_CALLBACK *pfnDra
   {
     if (!jpegdraws[i].pPixels)
     {
-      jpegdraws[i].pPixels = (uint16_t *)heap_caps_malloc(MAXOUTPUTSIZE * 16 * 16 * 2, MALLOC_CAP_DMA);
+      jpegdraws[i].pPixels = (uint16_t *)heap_caps_aligned_alloc(16, MAXOUTPUTSIZE * 16 * 16 * 2, MALLOC_CAP_DMA);
     }
     if (jpegdraws[i].pPixels)
     {
