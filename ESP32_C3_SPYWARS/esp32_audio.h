@@ -31,7 +31,7 @@ static esp_err_t i2s_init(i2s_port_t i2s_num, uint32_t sample_rate,
     i2s_config.use_apll = false;
     i2s_config.tx_desc_auto_clear = true;
     i2s_config.fixed_mclk = 0;
-    i2s_config.mclk_multiple = I2S_MCLK_MULTIPLE_DEFAULT;
+    i2s_config.mclk_multiple = I2S_MCLK_MULTIPLE_128;
     i2s_config.bits_per_chan = I2S_BITS_PER_CHAN_16BIT;
 
     i2s_pin_config_t pin_config;
@@ -53,8 +53,8 @@ static void audioDataCallback(MP3FrameInfo &info, int16_t *pwm_buffer, size_t le
     unsigned long s = millis();
     if (_samprate != info.samprate)
     {
-        log_i("bitrate: %d, nChans: %d, samprate: %d, bitsPerSample: %d, outputSamps: %d, layer: %d, version: %d",
-              info.bitrate, info.nChans, info.samprate, info.bitsPerSample, info.outputSamps, info.layer, info.version);
+        // log_i("bitrate: %d, nChans: %d, samprate: %d, bitsPerSample: %d, outputSamps: %d, layer: %d, version: %d",
+        //       info.bitrate, info.nChans, info.samprate, info.bitsPerSample, info.outputSamps, info.layer, info.version);
         i2s_set_clk(_i2s_num, info.samprate /* sample_rate */, info.bitsPerSample /* bits_cfg */, (info.nChans == 2) ? I2S_CHANNEL_STEREO : I2S_CHANNEL_MONO /* channel */);
         _samprate = info.samprate;
     }
@@ -88,7 +88,7 @@ static void mp3_player_task(void *pvParam)
         ms = millis();
     }
     _mp3.end();
-    log_i("MP3 stop.");
+    // log_i("MP3 stop.");
 
     vTaskDelete(NULL);
 }
