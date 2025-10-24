@@ -16,9 +16,12 @@
  ******************************************************************************/
 #define MJPEG_FILENAME "/trawin.mjpeg"
 #define GFX_BRIGHTNESS 63
+// #define MJPEG_FILENAME "/output.mjpeg"
+// #define GFX_BRIGHTNESS 239
 
 // Dev Device Pins: <https://github.com/moononournation/Dev_Device_Pins.git>
 #include "PINS_ESP32-C6-LCD-1_47.h"
+// #include "PINS_ESP32-S3-LCD-1_47.h"
 
 #if defined(RGB_PANEL) || defined(DSI_PANEL) || defined(CANVAS)
 // use little endian pixel
@@ -100,13 +103,13 @@ void setup()
 #if defined(SD_D1) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */, SD_D1, SD_D2, SD_CS /* D3 */);
-  if (!SD_MMC.begin(root, false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
+  if (!SD_MMC.begin("/root", false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_SCK) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
-  if (!SD_MMC.begin(root, true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
+  if (!SD_MMC.begin("/root", true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_CS)
 #define FILESYSTEM SD
   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
