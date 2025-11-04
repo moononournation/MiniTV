@@ -14,14 +14,13 @@
  *   SD:
  *     Copy files to SD card
  ******************************************************************************/
-#define MJPEG_FILENAME "/trawin.mjpeg"
-#define GFX_BRIGHTNESS 63
-// #define MJPEG_FILENAME "/output.mjpeg"
-// #define GFX_BRIGHTNESS 239
+#define MJPEG_FILENAME "/output.mjpeg"
+#define GFX_BRIGHTNESS 239
 
 // Dev Device Pins: <https://github.com/moononournation/Dev_Device_Pins.git>
 #include "PINS_ESP32-C6-LCD-1_47.h"
 // #include "PINS_ESP32-S3-LCD-1_47.h"
+// #include "PINS_RP2350-LCD-1_47.h"
 
 #if defined(RGB_PANEL) || defined(DSI_PANEL) || defined(CANVAS)
 // use little endian pixel
@@ -30,9 +29,11 @@
 #endif
 #include "MjpegClass.h"
 
+#ifdef ESP32
 #include <FFat.h>
-#include <LittleFS.h>
 #include <SPIFFS.h>
+#endif
+#include <LittleFS.h>
 #include <SD.h>
 #ifdef SOC_SDMMC_HOST_SUPPORTED
 #include <SD_MMC.h>
@@ -94,12 +95,16 @@ void setup()
   ledcSetup(0, 1000, 8);
   ledcAttachPin(GFX_BL, 0);
   ledcWrite(0, GFX_BRIGHTNESS);
-#else  // ESP_ARDUINO_VERSION_MAJOR >= 3
+#elif defined(ESP_ARDUINO_VERSION_MAJOR) && (ESP_ARDUINO_VERSION_MAJOR >= 3)
   ledcAttachChannel(GFX_BL, 1000, 8, 1);
   ledcWrite(GFX_BL, GFX_BRIGHTNESS);
-#endif // ESP_ARDUINO_VERSION_MAJOR >= 3
+#else
+  pinMode(GFX_BL, OUTPUT);
+  analogWrite(GFX_BL, GFX_BRIGHTNESS);
+#endif
 #endif // GFX_BL
 
+#ifdef ESP32
 #if defined(SD_D1) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */, SD_D1, SD_D2, SD_CS /* D3 */);
@@ -114,10 +119,19 @@ void setup()
 #define FILESYSTEM SD
   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
 #else
-#define FILESYSTEM FFat
+  #define FILESYSTEM FFat
   // #define FILESYSTEM LittleFS
   // #define FILESYSTEM SPIFFS
-  if (!FILESYSTEM.begin(false, root))
+  if (!FILESYSTEM.begin(false, "/root"))
+#endif
+#else // !ESP32
+#ifdef SD_D1
+  #define FILESYSTEM SD
+  if (!SD.begin(SD_SCK, SD_MOSI, SD_MISO))
+#else
+  #define FILESYSTEM LittleFS
+  if (!FILESYSTEM.begin())
+#endif
 #endif
   {
     Serial.println("ERROR: File system mount failed!");
@@ -126,14 +140,22 @@ void setup()
   else
   {
     output_buf_size = gfx->width() * 4 * 2;
+#ifdef ESP32
     output_buf = (uint16_t *)heap_caps_aligned_alloc(16, output_buf_size * sizeof(uint16_t), MALLOC_CAP_DMA);
+#else
+    output_buf = (uint16_t *)malloc(output_buf_size * sizeof(uint16_t));
+#endif
     if (!output_buf)
     {
       Serial.println("output_buf aligned_alloc failed!");
     }
 
     estimateBufferSize = gfx->width() * gfx->height() * 2 / 5;
+#ifdef ESP32
     mjpeg_buf = (uint8_t *)heap_caps_malloc(estimateBufferSize, MALLOC_CAP_8BIT);
+#else
+    mjpeg_buf = (uint8_t *)malloc(estimateBufferSize);
+#endif
   }
 }
 
