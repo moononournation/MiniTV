@@ -101,3 +101,9 @@ ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "scale=320:264:flags=
 ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -ar 44100 -ac 1 -ab 16k -filter:a loudnorm -filter:a "volume=-5dB" EP20.mp3
 ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 12 EP20.mjpeg
 ```
+
+## Infinity Castle
+
+```console
+ffmpeg -y -i KimetsuS05E08.mkv -ss 0:31:03.6 -t 0:01:28 -pix_fmt yuvj420p -q:v 5 -vf "fps=15,scale=-1:320:flags=lanczos,crop=172:320:(in_w-172)/2:0" output.mjpeg
+```
