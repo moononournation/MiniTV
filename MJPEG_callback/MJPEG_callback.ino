@@ -118,9 +118,10 @@ void setup()
 #define FILESYSTEM SD
   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
 #else
-#define FILESYSTEM FFat
-  // #define FILESYSTEM LittleFS
-  // #define FILESYSTEM SPIFFS
+// #define FILESYSTEM FFat
+#define FILESYSTEM LittleFS
+// #define FILESYSTEM SPIFFS
+#define OPENFS mjpegOpenLittleFS
   if (!FILESYSTEM.begin(false, "/root"))
 #endif
 #else // !ESP32

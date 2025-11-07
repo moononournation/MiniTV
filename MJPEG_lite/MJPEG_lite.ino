@@ -101,29 +101,35 @@ void setup()
 #ifdef ESP32
 #if defined(SD_D1) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
+#define OPENFS mjpegOpenSD_MMC
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */, SD_D1, SD_D2, SD_CS /* D3 */);
   if (!SD_MMC.begin("/root", false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_SCK) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
+#define OPENFS mjpegOpenSD_MMC
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
   if (!SD_MMC.begin("/root", true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_CS)
 #define FILESYSTEM SD
+#define OPENFS mjpegOpenSD
   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
 #else
-#define FILESYSTEM FFat
-  // #define FILESYSTEM LittleFS
-  // #define FILESYSTEM SPIFFS
+// #define FILESYSTEM FFat
+#define FILESYSTEM LittleFS
+// #define FILESYSTEM SPIFFS
+#define OPENFS mjpegOpenLittleFS
   if (!FILESYSTEM.begin(false, "/root"))
 #endif
 #else // !ESP32
 #ifdef SD_D1
 #define FILESYSTEM SD
+#define OPENFS mjpegOpenSD
   if (!SD.begin(SD_SCK, SD_MOSI, SD_MISO))
 #else
 #define FILESYSTEM LittleFS
+#define OPENFS mjpegOpenLittleFS
   if (!FILESYSTEM.begin())
 #endif
 #endif
@@ -147,8 +153,8 @@ void loop()
   while (!isMjpegEnded)
   {
     /* select single play or loopback forever */
-    // if (jpeg.open(MJPEG_FILENAME, mjpegOpenSD, mjpegClose, mjpegRead, mjpegSeek, JPEGDraw)) {
-    if (jpeg.open(MJPEG_FILENAME, mjpegOpenSD, mjpegCloseLoopback, mjpegRead, mjpegSeek, JPEGDraw))
+    // if (jpeg.open(MJPEG_FILENAME, OPENFS, mjpegClose, mjpegRead, mjpegSeek, JPEGDraw))
+    if (jpeg.open(MJPEG_FILENAME, OPENFS, mjpegCloseLoopback, mjpegRead, mjpegSeek, JPEGDraw))
     {
 #ifdef BIG_ENDIAN_PIXEL
       jpeg.setPixelType(RGB565_BIG_ENDIAN);

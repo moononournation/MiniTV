@@ -22,6 +22,20 @@ bool isMjpegEnded = false;
 File mjpegFile;
 int32_t mjpeg_offset = 0;
 
+void *mjpegOpenLittleFS(const char *filename, int32_t *size) {
+  if ((!isFileOpened) || (!mjpegFile)) {
+    mjpegFile = LittleFS.open(filename);
+    if (mjpegFile) {
+      mjpeg_offset = 0;
+      isFileOpened = true;
+      isMjpegEnded = false;
+    }
+  }
+  isJpegEnded = false;
+  *size = mjpegFile.size() - mjpeg_offset;
+  return &mjpegFile;
+}
+
 void *mjpegOpenSD(const char *filename, int32_t *size) {
   if ((!isFileOpened) || (!mjpegFile)) {
     mjpegFile = SD.open(filename);
