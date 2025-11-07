@@ -4,11 +4,11 @@
  * Dependent libraries:
  * JPEGDEC: https://github.com/bitbank2/JPEGDEC.git
  ******************************************************************************/
-#ifndef _MJPEGCLASS_H_
-#define _MJPEGCLASS_H_
+#pragma once
+
+#include <JPEGDEC.h>
 
 #define READ_BATCH_SIZE 1024
-#define MAXOUTPUTSIZE (MAX_BUFFERED_PIXELS / 16 / 16)
 
 /* Wio Terminal */
 #if defined(ARDUINO_ARCH_SAMD) && defined(SEEED_GROVE_UI_WIRELESS)
@@ -18,8 +18,6 @@
 #else
 #include <SD.h>
 #endif
-
-#include <JPEGDEC.h>
 
 class MjpegClass
 {
@@ -45,13 +43,15 @@ public:
   {
     if (_read == 0)
     {
-      // Serial.println("(_read == 0)");
-      _read = _input->readBytes(_mjpeg_buf, READ_BATCH_SIZE);
+      // _mjpeg_buf empty
+    _read = _input->readBytes(_mjpeg_buf, READ_BATCH_SIZE);
     }
     else
     {
+      // pad previous remain data to the start of _mjpeg_buf
       memcpy(_mjpeg_buf, _p, _read);
     }
+
     bool found_FFD8 = false;
     _p = _mjpeg_buf;
     while ((_read > 0) && (!found_FFD8))
@@ -69,7 +69,6 @@ public:
       {
         if (*_p == 0xFF)
         {
-          //Serial.println("(*_p == 0xFF)");
           _mjpeg_buf[0] = 0xFF;
           _read = _input->readBytes(_mjpeg_buf + 1, READ_BATCH_SIZE) + 1;
         }
@@ -114,6 +113,7 @@ public:
         --_read;
         if ((*_p++ == 0xFF) && (*_p == 0xD9)) // JPEG trailer
         {
+          // Serial.printf("Found FFD9 at: %d.\n", i);
           found_FFD9 = true;
         }
       }
@@ -137,7 +137,6 @@ public:
 
   bool drawJpg()
   {
-    // Serial.printf("drawJpg: %d, %02x, %02x\n", _p - _mjpeg_buf, *(_p - 2), *(_p - 1));
     _jpeg.openRAM(_mjpeg_buf, _p - _mjpeg_buf, _pfnDraw);
     if (_scale == -1)
     {
@@ -195,13 +194,10 @@ private:
   int _y;
   int _widthLimit;
   int _heightLimit;
-
-  uint8_t *_p;
-
-  JPEGDEC _jpeg;
   int _scale = -1;
 
+  JPEGDEC _jpeg;
+
+  uint8_t *_p;
   int32_t _read;
 };
-
-#endif // _MJPEGCLASS_H_

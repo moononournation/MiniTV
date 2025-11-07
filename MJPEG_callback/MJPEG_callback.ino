@@ -50,10 +50,9 @@ long output_buf_size, estimateBufferSize;
 uint8_t *mjpeg_buf;
 uint16_t *output_buf;
 
-int jpegDrawCallback(JPEGDRAW *pDraw)
+int JPEGDraw(JPEGDRAW *pDraw)
 {
   // Serial.printf("Draw pos = (%d, %d), size = %d x %d\n", pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
-
   unsigned long s = millis();
 #ifdef BIG_ENDIAN_PIXEL
   gfx->draw16bitBeRGBBitmap(pDraw->x, pDraw->y, pDraw->pPixels, pDraw->iWidth, pDraw->iHeight);
@@ -119,17 +118,17 @@ void setup()
 #define FILESYSTEM SD
   if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
 #else
-  #define FILESYSTEM FFat
+#define FILESYSTEM FFat
   // #define FILESYSTEM LittleFS
   // #define FILESYSTEM SPIFFS
   if (!FILESYSTEM.begin(false, "/root"))
 #endif
 #else // !ESP32
 #ifdef SD_D1
-  #define FILESYSTEM SD
+#define FILESYSTEM SD
   if (!SD.begin(SD_SCK, SD_MOSI, SD_MISO))
 #else
-  #define FILESYSTEM LittleFS
+#define FILESYSTEM LittleFS
   if (!FILESYSTEM.begin())
 #endif
 #endif
@@ -181,11 +180,11 @@ void loop()
 
 #ifdef BIG_ENDIAN_PIXEL
     mjpeg.setup(
-        &mjpegFile, mjpeg_buf, jpegDrawCallback, true /* useBigEndian */,
+        &mjpegFile, mjpeg_buf, JPEGDraw, true /* useBigEndian */,
         0 /* x */, 0 /* y */, gfx->width() /* widthLimit */, gfx->height() /* heightLimit */);
 #else
     mjpeg.setup(
-        &mjpegFile, mjpeg_buf, jpegDrawCallback, false /* useBigEndian */,
+        &mjpegFile, mjpeg_buf, JPEGDraw, false /* useBigEndian */,
         0 /* x */, 0 /* y */, gfx->width() /* widthLimit */, gfx->height() /* heightLimit */);
 #endif
 
@@ -202,9 +201,10 @@ void loop()
       curr_ms = millis();
       total_frames++;
     }
-    int time_used = millis() - start_ms;
-    Serial.println(F("MJPEG end"));
     mjpegFile.close();
+
+    int time_used = millis() - start_ms;
+    Serial.println("MJPEG end");
     float fps = 1000.0 * total_frames / time_used;
     total_decode_video -= total_show_video;
     Serial.printf("Total frames: %d\n", total_frames);
