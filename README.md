@@ -102,6 +102,12 @@ ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -ar 44100 -ac 1 -ab 16k -
 ffmpeg -i spy_family/EP20.mp4 -ss 17:02.00 -t 00:14.00 -vf "fps=10,scale=320:264:flags=lanczos,crop=288:240:(in_w-288)/2:0" -q:v 12 EP20.mjpeg
 ```
 
+## Train Scene Decoration
+
+```console
+ffmpeg -y -i input.mp4 -ss 0:01:00 -pix_fmt yuvj420p -q:v 7 -vf "fps=15,scale=480:-1:flags=lanczos,crop=320:172:80:0" output.mjpeg
+```
+
 ## Infinity Castle
 
 ```console
