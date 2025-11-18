@@ -24,7 +24,7 @@ int32_t mjpeg_offset = 0;
 
 void *mjpegOpenLittleFS(const char *filename, int32_t *size) {
   if ((!isFileOpened) || (!mjpegFile)) {
-    mjpegFile = LittleFS.open(filename);
+    mjpegFile = LittleFS.open(filename, "r");
     if (mjpegFile) {
       mjpeg_offset = 0;
       isFileOpened = true;
@@ -38,7 +38,7 @@ void *mjpegOpenLittleFS(const char *filename, int32_t *size) {
 
 void *mjpegOpenSD(const char *filename, int32_t *size) {
   if ((!isFileOpened) || (!mjpegFile)) {
-    mjpegFile = SD.open(filename);
+    mjpegFile = SD.open(filename, "r");
     if (mjpegFile) {
       mjpeg_offset = 0;
       isFileOpened = true;
@@ -53,7 +53,7 @@ void *mjpegOpenSD(const char *filename, int32_t *size) {
 #ifdef SOC_SDMMC_HOST_SUPPORTED
 void *mjpegOpenSD_MMC(const char *filename, int32_t *size) {
   if ((!isFileOpened) || (!mjpegFile)) {
-    mjpegFile = SD_MMC.open(filename);
+    mjpegFile = SD_MMC.open(filename, "r");
     if (mjpegFile) {
       mjpeg_offset = 0;
       isFileOpened = true;
