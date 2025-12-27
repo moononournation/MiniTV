@@ -7,13 +7,14 @@
  *
  * Setup steps:
  * 1. Change your LCD parameters in Arduino_GFX setting
- * 2. Upload AVI file
+ * 2. Upload Motion JPEG file
  *   FFat/LittleFS:
  *     upload FFat (FatFS) data with ESP32 Sketch Data Upload:
  *     ESP32: https://github.com/lorol/arduino-esp32fs-plugin
  *   SD:
  *     Copy files to SD card
  ******************************************************************************/
+#define ROOT "/root"
 #define MJPEG_FILENAME "/output.mjpeg"
 #define GFX_BRIGHTNESS 239
 
@@ -107,22 +108,22 @@ void setup()
 #if defined(SD_D1) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */, SD_D1, SD_D2, SD_CS /* D3 */);
-  if (!SD_MMC.begin("/root", false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
+  if (!SD_MMC.begin(ROOT, false /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_SCK) && defined(SOC_SDMMC_HOST_SUPPORTED)
 #define FILESYSTEM SD_MMC
   pinMode(SD_CS, OUTPUT);
   digitalWrite(SD_CS, HIGH);
   SD_MMC.setPins(SD_SCK, SD_MOSI /* CMD */, SD_MISO /* D0 */);
-  if (!SD_MMC.begin("/root", true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
+  if (!SD_MMC.begin(ROOT, true /* mode1bit */, false /* format_if_mount_failed */, SDMMC_FREQ_HIGHSPEED))
 #elif defined(SD_CS)
 #define FILESYSTEM SD
-  if (!SD.begin(SD_CS, SPI, 80000000, "/root"))
+  if (!SD.begin(SD_CS, SPI, 80000000, ROOT))
 #else
 // #define FILESYSTEM FFat
 #define FILESYSTEM LittleFS
 // #define FILESYSTEM SPIFFS
 #define OPENFS mjpegOpenLittleFS
-  if (!FILESYSTEM.begin(false, "/root"))
+  if (!FILESYSTEM.begin(false, ROOT))
 #endif
 #else // !ESP32
 #ifdef SD_D1
@@ -170,7 +171,7 @@ void loop()
   }
   else
   {
-    Serial.println(F("MJPEG start"));
+    Serial.println("MJPEG start");
 
     start_ms = millis();
     curr_ms = millis();
@@ -206,6 +207,7 @@ void loop()
 
     int time_used = millis() - start_ms;
     Serial.println("MJPEG end");
+
     float fps = 1000.0 * total_frames / time_used;
     total_decode_video -= total_show_video;
     Serial.printf("Total frames: %d\n", total_frames);
