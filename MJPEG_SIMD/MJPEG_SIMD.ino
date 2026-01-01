@@ -16,12 +16,13 @@
  ******************************************************************************/
 #define ROOT "/root"
 #define MJPEG_FILENAME ROOT "/output.mjpeg"
-#define MJPEG_OUTPUT_SIZE (320 * 480 * 2)          // memory for a output image frame
+#define MJPEG_OUTPUT_SIZE (412 * 412 * 2)          // memory for a output image frame
 #define MJPEG_BUFFER_SIZE (MJPEG_OUTPUT_SIZE / 4) // memory for a single JPEG frame
 #define GFX_BRIGHTNESS 239
 
 // Dev Device Pins: <https://github.com/moononournation/Dev_Device_Pins.git>
-#include "PINS_JC3248W535.h"
+// #include "PINS_JC3248W535.h"
+#include "PINS_ESP32-S3-Touch-LCD-1_46.h"
 
 #if defined(RGB_PANEL) || defined(DSI_PANEL) || defined(CANVAS)
 // use little endian pixel
